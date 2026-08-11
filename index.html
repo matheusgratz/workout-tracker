@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5-Day Recomposition Workout Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --border: #e2e8f0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1, h2 { text-align: center; color: var(--primary); }
+        .card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--border); }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
+        input, select, button { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); box-sizing: border-box; font-size: 1em; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        button:hover { opacity: 0.9; }
+        .btn-secondary { background: #64748b; }
+        .exercise-row { border-bottom: 1px solid var(--border); padding: 10px 0; }
+        .exercise-row:last-child { border-bottom: none; }
+        .exercise-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .form-link { font-size: 0.85em; color: var(--primary); text-decoration: none; }
+        .past-perf { font-size: 0.8em; color: #64748b; margin: 4px 0; }
+        .set-inputs { display: flex; gap: 10px; }
+        .timer-btn { width: auto; padding: 5px 10px; font-size: 0.85em; display: inline-block; margin-right: 5px; }
+        #timer-display { font-size: 1.2em; font-weight: bold; color: #e11d48; text-align: center; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Workout Tracker</h1>
+
+    <!-- Rest Timer Card -->
+    <div class="card">
+        <label>Rest Timer</label>
+        <div>
+            <button class="timer-btn" onclick="startTimer(60)">60s</button>
+            <button class="timer-btn" onclick="startTimer(90)">90s</button>
+            <button class="timer-btn" onclick="startTimer(120)">120s</button>
+        </div>
+        <div id="timer-display">00:00</div>
+    </div>
+
+    <!-- Date & Workout Selector Card -->
+    <div class="card">
+        <div class="form-group">
+            <label for="workout-date">Date</label>
+            <input type="date" id="workout-date">
+        </div>
+        <div class="form-group">
+            <label for="workout-type">Select Workout Routine</label>
+            <select id="workout-type" onchange="loadWorkoutForm()">
+                <option value="">-- Choose Routine --</option>
+                <option value="Day 1: Upper">Day 1: Upper Body</option>
+                <option value="Day 2: Lower">Day 2: Lower Body</option>
+                <option value="Day 3: Push">Day 3: Push</option>
+                <option value="Day 4: Pull">Day 4: Pull</option>
+                <option value="Day 5: Legs">Day 5: Legs & V-Taper</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Workout Entry Container -->
+    <div id="workout-container" class="card" style="display:none;">
+        <h2 id="routine-title"></h2>
+        <form id="workout-form">
+            <div id="exercise-list"></div>
+            <button type="button" onclick="saveWorkout()">Save Workout Session</button>
+        </form>
+    </div>
+
+    <!-- Progress Analytics Card -->
+    <div class="card">
+        <h2>Progress Analytics</h2>
+        <div class="form-group">
+            <label for="chart-exercise">Select Exercise to Track</label>
+            <select id="chart-exercise" onchange="updateChart()">
+                <option value="">-- Select Exercise --</option>
+            </select>
+        </div>
+        <canvas id="progressChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Backup / Restore -->
+    <div class="card">
+        <button class="btn-secondary" onclick="exportData()">Export Data (JSON)</button>
+        <input type="file" id="import-file" style="display:none;" onchange="importData(event)">
+        <button class="btn-secondary" onclick="document.getElementById('import-file').click()" style="margin-top:5px;">Import Data (JSON)</button>
+    </div>
+</div>
+
+<script>
+// Program Database
+const routines = {
+    "Day 1: Upper": [
+        { name: "Barbell Incline Bench Press", target: "6-8 reps", query: "Incline+Barbell+Bench+Press" },
+        { name: "Weighted Chest Dips", target: "8-10 reps", query: "Chest+Dips+form" },
+        { name: "Neutral-Grip Lat Pulldown", target: "8-10 reps", query: "Lat+Pulldown+form" },
+        { name: "Standing Cable Lateral Raises", target: "10-12 reps", query: "Cable+Lateral+Raise" },
+        { name: "Face Pulls", target: "12-15 reps", query: "Face+Pulls+form" },
+        { name: "Incline Dumbbell Bicep Curls", target: "10-12 reps", query: "Incline+Dumbbell+Curl" }
+    ],
+    "Day 2: Lower": [
+        { name: "Barbell Back Squat / Hack Squat", target: "6-8 reps", query: "Barbell+Back+Squat" },
+        { name: "Romanian Deadlift (RDL)", target: "8-10 reps", query: "Romanian+Deadlift" },
+        { name: "Leg Press 45°", target: "10-12 reps", query: "Leg+Press+form" },
+        { name: "Lying or Seated Leg Curl", target: "10-12 reps", query: "Lying+Leg+Curl" },
+        { name: "Standing Calf Raises", target: "12-15 reps", query: "Standing+Calf+Raise" }
+    ],
+    "Day 3: Push": [
+        { name: "Overhead Barbell Press (OHP)", target: "6-8 reps", query: "Overhead+Barbell+Press" },
+        { name: "Flat Dumbbell Bench Press", target: "8-10 reps", query: "Dumbbell+Bench+Press" },
+        { name: "Dumbbell Lateral Raises", target: "10-12 reps", query: "Dumbbell+Lateral+Raise" },
+        { name: "Cable Low-to-High Flyes", target: "12-15 reps", query: "Cable+Low+to+High+Fly" },
+        { name: "Cable Triceps Pushdowns", target: "10-12 reps", query: "Tricep+Pushdown" },
+        { name: "Overhead Cable Triceps Extensions", target: "10-12 reps", query: "Overhead+Cable+Tricep+Extension" }
+    ],
+    "Day 4: Pull": [
+        { name: "Heavy Barbell Row / T-Bar Row", target: "6-8 reps", query: "Barbell+Row" },
+        { name: "Wide-Grip Lat Pulldown", target: "8-10 reps", query: "Wide+Grip+Lat+Pulldown" },
+        { name: "Chest-Supported Seated Cable Row", target: "8-10 reps", query: "Seated+Cable+Row" },
+        { name: "Dumbbell Rear Delt Flyes", target: "12-15 reps", query: "Rear+Delt+Fly" },
+        { name: "EZ-Bar Preacher Curls", target: "8-10 reps", query: "Preacher+Curl" },
+        { name: "Cable Hammer Curls", target: "10-12 reps", query: "Cable+Hammer+Curl" }
+    ],
+    "Day 5: Legs": [
+        { name: "Bulgarian Split Squats", target: "8-10 reps", query: "Bulgarian+Split+Squat" },
+        { name: "Leg Extensions", target: "12-15 reps", query: "Leg+Extension" },
+        { name: "Machine Seated Calf Raises", target: "12-15 reps", query: "Seated+Calf+Raise" },
+        { name: "Heavy Cable Lateral Raises", target: "12-15 reps", query: "Cable+Lateral+Raise" },
+        { name: "Hanging Leg Raises", target: "15 reps", query: "Hanging+Leg+Raise" }
+    ]
+};
+
+// Set today's date
+document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
+
+// Storage Initialization
+let historyData = JSON.parse(localStorage.getItem('workout_history')) || [];
+let myChart = null;
+
+function getPastPerformance(exName) {
+    const pastSessions = historyData
+        .filter(s => s.exercises && s.exercises[exName])
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    if (pastSessions.length > 0) {
+        const lastEx = pastSessions[0].exercises[exName];
+        return `Last (${pastSessions[0].date}): ${lastEx.weight} kg × ${lastEx.reps} reps`;
+    }
+    return "No historical data yet";
+}
+
+function loadWorkoutForm() {
+    const routineKey = document.getElementById('workout-type').value;
+    const container = document.getElementById('workout-container');
+    const list = document.getElementById('exercise-list');
+    
+    if (!routineKey) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    document.getElementById('routine-title').innerText = routineKey;
+    list.innerHTML = '';
+    
+    routines[routineKey].forEach((ex, idx) => {
+        const pastText = getPastPerformance(ex.name);
+        const exHtml = `
+            <div class="exercise-row">
+                <div class="exercise-header">
+                    <span>${ex.name} <small>(${ex.target})</small></span>
+                    <a class="form-link" href="https://www.youtube.com/results?search_query=${ex.query}" target="_blank">Form Video ↗</a>
+                </div>
+                <div class="past-perf">${pastText}</div>
+                <div class="set-inputs">
+                    <input type="number" step="0.5" id="weight-${idx}" placeholder="Weight (kg)">
+                    <input type="number" id="reps-${idx}" placeholder="Reps achieved">
+                </div>
+            </div>
+        `;
+        list.insertAdjacentHTML('beforeend', exHtml);
+    });
+    
+    container.style.display = 'block';
+}
+
+function saveWorkout() {
+    const date = document.getElementById('workout-date').value;
+    const routineKey = document.getElementById('workout-type').value;
+    if (!date || !routineKey) return alert("Select date and routine");
+
+    const sessionData = { date, routine: routineKey, exercises: {} };
+
+    routines[routineKey].forEach((ex, idx) => {
+        const weight = parseFloat(document.getElementById(`weight-${idx}`).value) || 0;
+        const reps = parseInt(document.getElementById(`reps-${idx}`).value) || 0;
+        if (weight > 0 || reps > 0) {
+            sessionData.exercises[ex.name] = { weight, reps };
+        }
+    });
+
+    historyData = historyData.filter(s => !(s.date === date && s.routine === routineKey));
+    historyData.push(sessionData);
+    localStorage.setItem('workout_history', JSON.stringify(historyData));
+
+    alert("Workout Saved Successfully!");
+    populateChartOptions();
+    loadWorkoutForm();
+}
+
+// Rest Timer Functionality
+let timerInterval;
+function startTimer(seconds) {
+    clearInterval(timerInterval);
+    let remaining = seconds;
+    const display = document.getElementById('timer-display');
+    
+    timerInterval = setInterval(() => {
+        const mins = String(Math.floor(remaining / 60)).padStart(2, '0');
+        const secs = String(remaining % 60).padStart(2, '0');
+        display.innerText = `${mins}:${secs}`;
+        
+        if (--remaining < 0) {
+            clearInterval(timerInterval);
+            display.innerText = "Time's Up!";
+        }
+    }, 1000);
+}
+
+// Charting Functionality
+function populateChartOptions() {
+    const select = document.getElementById('chart-exercise');
+    select.innerHTML = '<option value="">-- Select Exercise --</option>';
+    const allExercises = new Set();
+    Object.values(routines).flat().forEach(e => allExercises.add(e.name));
+    allExercises.forEach(ex => {
+        select.insertAdjacentHTML('beforeend', `<option value="${ex}">${ex}</option>`);
+    });
+}
+
+function updateChart() {
+    const exName = document.getElementById('chart-exercise').value;
+    if (!exName) return;
+
+    const filtered = historyData
+        .filter(s => s.exercises && s.exercises[exName])
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const labels = filtered.map(s => s.date);
+    const weights = filtered.map(s => s.exercises[exName].weight);
+    const reps = filtered.map(s => s.exercises[exName].reps);
+
+    if (myChart) myChart.destroy();
+
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Weight (kg)', data: weights, borderColor: '#2563eb', fill: false },
+                { label: 'Reps', data: reps, borderColor: '#e11d48', fill: false }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+// Export / Import
+function exportData() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(historyData));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", "workout_history.json");
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+}
+
+function importData(event) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        historyData = JSON.parse(e.target.result);
+        localStorage.setItem('workout_history', JSON.stringify(historyData));
+        alert("Data Imported Successfully!");
+        populateChartOptions();
+    };
+    reader.readAsText(event.target.files[0]);
+}
+
+// Initial Setup
+populateChartOptions();
+</script>
+</body>
+</html>
