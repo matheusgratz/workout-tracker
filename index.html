@@ -7,12 +7,13 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
+        /* Default CSS Variables (Dynamically changed via JS per user profile) */
         :root {
             --bg-dark: #0a0e17;
             --card-bg: #131b2e;
-            --accent-volt: #ccff00;
-            --accent-crimson: #ff2a5f;
-            --accent-cyan: #00f2fe;
+            --accent-primary: #ccff00;   /* Volt for MR, Rose/Fuchsia for MRS */
+            --accent-secondary: #00f2fe; /* Cyan for MR, Orchid for MRS */
+            --accent-tertiary: #ff2a5f;  /* Crimson for MR, Rose Gold for MRS */
             --accent-purple: #a855f7;
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
@@ -28,10 +29,71 @@
             padding: 15px;
             background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-dark) 70%);
             min-height: 100vh;
+            transition: background-color 0.3s ease;
         }
 
         .container { max-width: 680px; margin: 0 auto; }
 
+        /* User Profile Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 14, 23, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .modal-card {
+            background: var(--card-bg);
+            border: 2px solid var(--accent-primary);
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+        }
+        .modal-card h2 { justify-content: center; margin-bottom: 8px; color: #ffffff; }
+        .modal-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
+        
+        .user-btn {
+            padding: 14px;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+        .user-btn-mr {
+            background: #0f172a;
+            border: 2px solid #ccff00;
+            color: #ccff00;
+        }
+        .user-btn-mr:hover {
+            background: #ccff00;
+            color: #000000;
+            box-shadow: 0 0 15px rgba(204, 255, 0, 0.4);
+        }
+        .user-btn-mrs {
+            background: #190a18;
+            border: 2px solid #ff1493;
+            color: #ff1493;
+        }
+        .user-btn-mrs:hover {
+            background: #ff1493;
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.5);
+        }
+
+        /* Gym Header Style */
         .app-header {
             text-align: center;
             margin-bottom: 20px;
@@ -43,10 +105,27 @@
             font-size: 2.2rem;
             margin: 0;
             color: #ffffff;
-            text-shadow: 0 0 10px rgba(204, 255, 0, 0.3);
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
-        .app-header h1 span { color: var(--accent-volt); }
+        .app-header h1 span { color: var(--accent-primary); }
         .app-header p { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+
+        .active-user-badge {
+            background: #1e293b;
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+        }
 
         .card {
             background: var(--card-bg);
@@ -62,7 +141,7 @@
             content: '';
             position: absolute;
             top: 0; left: 0; width: 4px; height: 100%;
-            background: var(--accent-volt);
+            background: var(--accent-primary);
         }
 
         h2 {
@@ -94,12 +173,12 @@
         }
 
         input:focus, select:focus, textarea:focus {
-            border-color: var(--accent-volt);
-            box-shadow: 0 0 8px rgba(204, 255, 0, 0.2);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
         }
 
         button {
-            background: var(--accent-volt);
+            background: var(--accent-primary);
             color: #000000;
             font-weight: 800;
             text-transform: uppercase;
@@ -113,7 +192,7 @@
         button:hover { filter: brightness(1.1); }
 
         .btn-secondary { background: #334155; color: #ffffff; }
-        .btn-success { background: var(--accent-cyan); color: #000000; }
+        .btn-success { background: var(--accent-secondary); color: #000000; }
         .btn-mini { width: auto; padding: 4px 8px; font-size: 0.75rem; margin: 0; display: inline-block; }
 
         /* Gym Rest Timer */
@@ -133,14 +212,14 @@
             font-size: 0.85rem;
             margin: 0;
             background: #1e293b;
-            color: var(--accent-volt);
+            color: var(--accent-primary);
             border: 1px solid var(--border-color);
         }
         #timer-display {
             font-family: monospace;
             font-size: 1.8rem;
             font-weight: 900;
-            color: var(--accent-crimson);
+            color: var(--accent-tertiary);
             text-shadow: 0 0 8px rgba(255, 42, 95, 0.4);
         }
 
@@ -175,7 +254,7 @@
         .exercise-header { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: #ffffff; margin-bottom: 4px; }
         .target-tag {
             background: #1e293b;
-            color: var(--accent-volt);
+            color: var(--accent-primary);
             font-size: 0.75rem;
             padding: 2px 8px;
             border-radius: 4px;
@@ -183,14 +262,14 @@
         }
         .sets-tag {
             background: #334155;
-            color: var(--accent-cyan);
+            color: var(--accent-secondary);
             font-size: 0.75rem;
             padding: 2px 8px;
             border-radius: 4px;
             margin-left: 4px;
         }
-        .form-link { font-size: 0.8rem; color: var(--accent-cyan); text-decoration: none; font-weight: bold; margin-left: 6px; }
-        .past-perf { font-size: 0.8em; color: var(--accent-volt); margin: 4px 0 8px 0; font-family: monospace; }
+        .form-link { font-size: 0.8rem; color: var(--accent-secondary); text-decoration: none; font-weight: bold; margin-left: 6px; }
+        .past-perf { font-size: 0.8em; color: var(--accent-primary); margin: 4px 0 8px 0; font-family: monospace; }
         
         /* Set-by-Set Input Grid */
         .set-grid {
@@ -211,7 +290,7 @@
 
         .volume-badge {
             background: #0f172a;
-            border: 1px dashed var(--accent-volt);
+            border: 1px dashed var(--accent-primary);
             padding: 10px;
             border-radius: 8px;
             text-align: center;
@@ -219,21 +298,38 @@
             font-size: 0.9rem;
             color: var(--text-muted);
         }
-        .volume-badge span { color: var(--accent-volt); font-weight: bold; font-size: 1.1rem; }
+        .volume-badge span { color: var(--accent-primary); font-weight: bold; font-size: 1.1rem; }
 
         .chart-container { position: relative; height: 260px; width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body>
 
+<!-- User Selection Overlay -->
+<div id="user-modal" class="modal-overlay">
+    <div class="modal-card">
+        <h2>🏋️ SELECT ATHLETE</h2>
+        <p>Choose profile to load custom theme, routines & training logs</p>
+        <button class="user-btn user-btn-mr" onclick="selectUser('MR. Maromba')">
+            <span>🦁</span> MR. Maromba (Volt Theme)
+        </button>
+        <button class="user-btn user-btn-mrs" onclick="selectUser('MRS. Maromba')">
+            <span>👑</span> MRS. Maromba (Rose Theme)
+        </button>
+    </div>
+</div>
+
 <div class="container">
     <div class="app-header">
         <h1>IRON <span>RECOMP</span></h1>
         <p>5-Day Heavy Hypertrophy Engine (6-8 Rep Target)</p>
+        <div id="active-user-display" class="active-user-badge" onclick="showUserModal()">
+            <span>👤 Active:</span> <span id="current-user-name">Select Profile</span> 🔄
+        </div>
     </div>
 
     <!-- Data Management Header -->
-    <div class="card" style="border-left-color: var(--accent-cyan);">
+    <div class="card" style="border-left-color: var(--accent-secondary);">
         <h2>💾 JSON Data Manager</h2>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn-success" onclick="exportDataFile()">Export JSON File</button>
@@ -245,7 +341,7 @@
     </div>
 
     <!-- Gym Rest Timer -->
-    <div class="card" style="border-left-color: var(--accent-crimson);">
+    <div class="card" style="border-left-color: var(--accent-tertiary);">
         <h2>⏱️ Iron Rest Timer</h2>
         <div class="timer-box">
             <div class="timer-btns">
@@ -297,14 +393,14 @@
     </div>
 
     <!-- Active Routine Logging -->
-    <div id="workout-container" class="card" style="display:none; border-left-color: var(--accent-volt);">
+    <div id="workout-container" class="card" style="display:none; border-left-color: var(--accent-primary);">
         <h2 id="routine-title"></h2>
         <form id="workout-form">
             <div id="exercise-list"></div>
             
             <div class="volume-badge">
                 Estimated Session Volume: <span id="session-volume">0</span> kg
-                <div id="auto-save-indicator" style="font-size:0.75rem; color:var(--accent-volt); margin-top:4px;">Auto-Save Enabled</div>
+                <div id="auto-save-indicator" style="font-size:0.75rem; color:var(--accent-primary); margin-top:4px;">Auto-Save Enabled</div>
             </div>
 
             <button type="button" onclick="saveWorkoutSession()">LOG WORKOUT SESSION</button>
@@ -312,7 +408,7 @@
     </div>
 
     <!-- Analytics Chart -->
-    <div class="card" style="border-left-color: var(--accent-cyan);">
+    <div class="card" style="border-left-color: var(--accent-secondary);">
         <h2>📈 Progression Analytics</h2>
         <div class="form-group">
             <label for="chart-exercise">Select Exercise</label>
@@ -338,8 +434,8 @@ const exerciseAlternatives = {
     "Overhead Barbell Press (OHP)": ["Seated Dumbbell Overhead Press", "Machine Shoulder Press", "Landmine Press"]
 };
 
-// Master Exercise Structure with Strict 6-8 Heavy Rep Target
-const routines = {
+// Master Exercise Structure
+const defaultRoutines = {
     "P1 - Day 1: Upper": [
         { name: "Barbell Incline Bench Press", sets: 4, target: "6-8 reps", query: "Incline+Barbell+Bench+Press", superset: null },
         { name: "Close-Grip Barbell Bench Press", sets: 3, target: "6-8 reps", query: "Close+Grip+Bench+Press", superset: "SUPERSET B (Upper/Mid Chest + Flyes)" },
@@ -383,11 +479,64 @@ const routines = {
 
 document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
 
-let workoutHistory = JSON.parse(localStorage.getItem('iron_recomp_data')) || [];
-let customRoutines = JSON.parse(localStorage.getItem('iron_custom_routines')) || {};
+let currentUser = "";
+let workoutHistory = [];
+let customRoutines = {};
+let routines = JSON.parse(JSON.stringify(defaultRoutines));
 let chartInstance = null;
 
-// Populate Custom AI Routines into Dropdown
+// Apply Visual Theme Palette Based on Selected Profile
+function applyTheme(user) {
+    const root = document.documentElement;
+    if (user === "MRS. Maromba") {
+        // High-Energy Rose Gold & Electric Fuchsia Gym Palette
+        root.style.setProperty('--accent-primary', '#ff1493');   /* Electric Fuchsia */
+        root.style.setProperty('--accent-secondary', '#e056fd'); /* Electric Orchid */
+        root.style.setProperty('--accent-tertiary', '#fb7185');  /* Rose Gold */
+        root.style.setProperty('--accent-purple', '#d946ef');    /* Neon Magenta */
+    } else {
+        // High-Contrast Electric Volt & Cyan Gym Palette (MR. Maromba)
+        root.style.setProperty('--accent-primary', '#ccff00');   /* Electric Volt */
+        root.style.setProperty('--accent-secondary', '#00f2fe'); /* Cyber Cyan */
+        root.style.setProperty('--accent-tertiary', '#ff2a5f');  /* Crimson */
+        root.style.setProperty('--accent-purple', '#a855f7');    /* Deep Purple */
+    }
+}
+
+// User Management Functions
+function showUserModal() {
+    document.getElementById('user-modal').style.display = 'flex';
+}
+
+function selectUser(user) {
+    currentUser = user;
+    applyTheme(currentUser);
+
+    document.getElementById('current-user-name').innerText = currentUser;
+    document.getElementById('user-modal').style.display = 'none';
+
+    // Migrate legacy data if needed
+    const oldHistory = localStorage.getItem('iron_recomp_data');
+    const userHistoryKey = `iron_recomp_data_${currentUser.replace(/\s+/g, '_')}`;
+    
+    if (oldHistory && !localStorage.getItem(userHistoryKey) && currentUser === "MR. Maromba") {
+        localStorage.setItem(userHistoryKey, oldHistory);
+    }
+
+    workoutHistory = JSON.parse(localStorage.getItem(userHistoryKey)) || [];
+    
+    const userCustomKey = `iron_custom_routines_${currentUser.replace(/\s+/g, '_')}`;
+    customRoutines = JSON.parse(localStorage.getItem(userCustomKey)) || {};
+
+    routines = JSON.parse(JSON.stringify(defaultRoutines));
+    loadCustomRoutinesDropdown();
+    populateChartDropdown();
+
+    document.getElementById('workout-container').style.display = 'none';
+    document.getElementById('workout-type').value = '';
+    document.getElementById('data-status').innerText = `Active Profile: ${currentUser} (${workoutHistory.length} Sessions Logged)`;
+}
+
 function loadCustomRoutinesDropdown() {
     const group = document.getElementById('custom-routines-group');
     group.innerHTML = '';
@@ -489,7 +638,6 @@ function loadWorkoutForm() {
     calculateTotalVolume();
 }
 
-// 🔄 Exercise Swap Functionality
 function swapExercise(idx) {
     const key = document.getElementById('workout-type').value;
     if (!key || !routines[key]) return;
@@ -521,10 +669,9 @@ function swapExercise(idx) {
     }
 }
 
-// 💾 Instant Auto-Save Requirement
 function handleInputAutoSave() {
     calculateTotalVolume();
-    saveWorkoutSession(true); // Auto-save silently
+    saveWorkoutSession(true);
 }
 
 function copyFirstSet(exIdx, totalSets) {
@@ -593,25 +740,27 @@ function saveWorkoutSession(isSilent = false) {
 
     workoutHistory = workoutHistory.filter(s => !(s.date === date && s.routine === key));
     workoutHistory.push(session);
-    localStorage.setItem('iron_recomp_data', JSON.stringify(workoutHistory));
+
+    const userHistoryKey = `iron_recomp_data_${currentUser.replace(/\s+/g, '_')}`;
+    localStorage.setItem(userHistoryKey, JSON.stringify(workoutHistory));
 
     const indicator = document.getElementById('auto-save-indicator');
     if (indicator) {
-        indicator.innerText = `Auto-Saved at ${new Date().toLocaleTimeString()}`;
+        indicator.innerText = `Auto-Saved (${currentUser}) at ${new Date().toLocaleTimeString()}`;
     }
 
     if (!isSilent) {
-        alert("SESSION LOGGED! KEEP UP THE GAINS.");
+        alert(`SESSION LOGGED FOR ${currentUser}! KEEP UP THE GAINS.`);
         populateChartDropdown();
         loadWorkoutForm();
         renderChart();
     }
 }
 
-// 🤖 Gemini AI Prompt Generator & Saver
+// AI Generator
 function copyAIPrompt() {
     const name = document.getElementById('ai-routine-name').value || "Custom AI Routine";
-    const promptText = `Acts as an elite strength coach. Generate a JSON array for a custom workout named "${name}" targeting HEAVY lifting (6-8 reps). Output ONLY valid JSON array format like this:
+    const promptText = `Acts as an elite strength coach. Generate a JSON array for a custom workout named "${name}" targeting HEAVY lifting (6-8 reps) for ${currentUser}. Output ONLY valid JSON array format like this:
 [
   {"name":"Incline Dumbbell Press","sets":4,"target":"6-8 reps","query":"Incline+Dumbbell+Press","superset":null},
   {"name":"Close-Grip Bench Press","sets":3,"target":"6-8 reps","query":"Close+Grip+Bench+Press","superset":"SUPERSET A"},
@@ -634,11 +783,12 @@ function saveAIRoutine() {
         if (!Array.isArray(parsedExercises)) throw new Error("JSON must be an array.");
 
         customRoutines[name] = parsedExercises;
-        localStorage.setItem('iron_custom_routines', JSON.stringify(customRoutines));
+        const userCustomKey = `iron_custom_routines_${currentUser.replace(/\s+/g, '_')}`;
+        localStorage.setItem(userCustomKey, JSON.stringify(customRoutines));
         loadCustomRoutinesDropdown();
-        alert(`Routine "${name}" saved successfully! You can now select it from the workout dropdown.`);
+        alert(`Routine "${name}" saved for ${currentUser}! Select it from the dropdown.`);
     } catch (e) {
-        alert("Invalid JSON format from Gemini. Please ensure you copied only the JSON array.");
+        alert("Invalid JSON format from Gemini. Ensure you copied only the JSON array.");
     }
 }
 
@@ -685,13 +835,16 @@ function renderChart() {
     const weights = filtered.map(s => s.exercises[exName].weight);
     const reps = filtered.map(s => s.exercises[exName].reps);
 
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-primary').trim();
+    const secondaryColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-secondary').trim();
+
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
-                { label: 'Max Weight (kg)', data: weights, borderColor: '#ccff00', backgroundColor: '#ccff00', tension: 0.2, yAxisID: 'y' },
-                { label: 'Max Reps', data: reps, borderColor: '#00f2fe', backgroundColor: '#00f2fe', tension: 0.2, yAxisID: 'y1' }
+                { label: 'Max Weight (kg)', data: weights, borderColor: primaryColor, backgroundColor: primaryColor, tension: 0.2, yAxisID: 'y' },
+                { label: 'Max Reps', data: reps, borderColor: secondaryColor, backgroundColor: secondaryColor, tension: 0.2, yAxisID: 'y1' }
             ]
         },
         options: {
@@ -699,8 +852,8 @@ function renderChart() {
             maintainAspectRatio: false,
             scales: {
                 x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-                y: { type: 'linear', display: true, position: 'left', ticks: { color: '#ccff00' }, grid: { color: '#1e293b' } },
-                y1: { type: 'linear', display: true, position: 'right', ticks: { color: '#00f2fe' }, grid: { drawOnChartArea: false } }
+                y: { type: 'linear', display: true, position: 'left', ticks: { color: primaryColor }, grid: { color: '#1e293b' } },
+                y1: { type: 'linear', display: true, position: 'right', ticks: { color: secondaryColor }, grid: { drawOnChartArea: false } }
             },
             plugins: { legend: { labels: { color: '#ffffff' } } }
         }
@@ -709,10 +862,11 @@ function renderChart() {
 
 // Data Manager Functions
 function exportDataFile() {
+    const fileName = `iron_recomp_${currentUser.replace(/\s+/g, '_')}_data.json`;
     const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(workoutHistory, null, 2));
     const anchor = document.createElement('a');
     anchor.setAttribute("href", str);
-    anchor.setAttribute("download", "iron_recomp_data.json");
+    anchor.setAttribute("download", fileName);
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -723,10 +877,11 @@ function importDataFile(event) {
     reader.onload = function(e) {
         try {
             workoutHistory = JSON.parse(e.target.result);
-            localStorage.setItem('iron_recomp_data', JSON.stringify(workoutHistory));
-            document.getElementById('data-status').innerText = `Data Loaded: ${workoutHistory.length} sessions.`;
+            const userHistoryKey = `iron_recomp_data_${currentUser.replace(/\s+/g, '_')}`;
+            localStorage.setItem(userHistoryKey, JSON.stringify(workoutHistory));
+            document.getElementById('data-status').innerText = `Loaded ${workoutHistory.length} sessions for ${currentUser}.`;
             populateChartDropdown();
-            alert("JSON Data File Loaded Successfully!");
+            alert(`JSON Data File Loaded Successfully for ${currentUser}!`);
         } catch (err) {
             alert("Invalid JSON file format.");
         }
@@ -735,23 +890,21 @@ function importDataFile(event) {
 }
 
 function fetchRemoteJSON() {
-    fetch('iron_recomp_data.json')
+    const remoteFile = `iron_recomp_${currentUser.replace(/\s+/g, '_')}_data.json`;
+    fetch(remoteFile)
         .then(res => res.json())
         .then(data => {
             workoutHistory = data;
-            localStorage.setItem('iron_recomp_data', JSON.stringify(workoutHistory));
-            document.getElementById('data-status').innerText = `Remote File Synced: ${workoutHistory.length} sessions.`;
+            const userHistoryKey = `iron_recomp_data_${currentUser.replace(/\s+/g, '_')}`;
+            localStorage.setItem(userHistoryKey, JSON.stringify(workoutHistory));
+            document.getElementById('data-status').innerText = `Synced ${workoutHistory.length} sessions for ${currentUser}.`;
             populateChartDropdown();
-            alert("Remote JSON file synced successfully!");
+            alert(`Remote JSON file synced successfully for ${currentUser}!`);
         })
         .catch(err => {
-            alert("Could not load 'iron_recomp_data.json' from server/repo. Use 'Load Local File' to select it manually.");
+            alert(`Could not load '${remoteFile}'. Use 'Load Local File' to select your data manually.`);
         });
 }
-
-// Init
-loadCustomRoutinesDropdown();
-populateChartDropdown();
 </script>
 </body>
 </html>
