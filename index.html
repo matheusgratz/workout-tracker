@@ -80,7 +80,7 @@
         .form-group { margin-bottom: 14px; }
         label { display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
         
-        input, select, button {
+        input, select, textarea, button {
             width: 100%;
             padding: 10px 12px;
             border-radius: 8px;
@@ -93,7 +93,7 @@
             transition: all 0.2s ease;
         }
 
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             border-color: var(--accent-volt);
             box-shadow: 0 0 8px rgba(204, 255, 0, 0.2);
         }
@@ -189,7 +189,7 @@
             border-radius: 4px;
             margin-left: 4px;
         }
-        .form-link { font-size: 0.8rem; color: var(--accent-cyan); text-decoration: none; font-weight: bold; }
+        .form-link { font-size: 0.8rem; color: var(--accent-cyan); text-decoration: none; font-weight: bold; margin-left: 6px; }
         .past-perf { font-size: 0.8em; color: var(--accent-volt); margin: 4px 0 8px 0; font-family: monospace; }
         
         /* Set-by-Set Input Grid */
@@ -229,7 +229,7 @@
 <div class="container">
     <div class="app-header">
         <h1>IRON <span>RECOMP</span></h1>
-        <p>5-Day Hypertrophy & Recomposition Engine</p>
+        <p>5-Day Heavy Hypertrophy Engine (6-8 Rep Target)</p>
     </div>
 
     <!-- Data Management Header -->
@@ -257,6 +257,21 @@
         </div>
     </div>
 
+    <!-- AI Routine Builder Tool -->
+    <div class="card" style="border-left-color: var(--accent-purple);">
+        <h2>🤖 Gemini AI Routine Generator</h2>
+        <div class="form-group">
+            <label for="ai-routine-name">Custom Routine Name</label>
+            <input type="text" id="ai-routine-name" placeholder="e.g. Custom Phase 3 - Day 1 Heavy Upper">
+        </div>
+        <button class="btn-secondary" style="background:var(--accent-purple);" onclick="copyAIPrompt()">1. Copy Gemini AI Prompt</button>
+        <div class="form-group" style="margin-top:10px;">
+            <label for="ai-json-input">2. Paste Gemini JSON Output Here</label>
+            <textarea id="ai-json-input" rows="3" placeholder='[{"name":"Bench Press","sets":4,"target":"6-8 reps","query":"Bench+Press","superset":null}]'></textarea>
+        </div>
+        <button onclick="saveAIRoutine()">Save AI Generated Routine</button>
+    </div>
+
     <!-- Session Selection -->
     <div class="card">
         <h2>🔥 Session Setup</h2>
@@ -268,19 +283,14 @@
             <label for="workout-type">Training Phase & Day</label>
             <select id="workout-type" onchange="loadWorkoutForm()">
                 <option value="">-- Choose Workout --</option>
-                <optgroup label="Phase 1: Base Hypertrophy (Months 1-3)">
+                <optgroup label="Phase 1: Heavy Recomposition (6-8 Reps)">
                     <option value="P1 - Day 1: Upper">Phase 1 - Day 1: Upper Body</option>
                     <option value="P1 - Day 2: Lower">Phase 1 - Day 2: Lower Body</option>
                     <option value="P1 - Day 3: Push">Phase 1 - Day 3: Push</option>
                     <option value="P1 - Day 4: Pull">Phase 1 - Day 4: Pull</option>
                     <option value="P1 - Day 5: Legs">Phase 1 - Day 5: Legs & V-Taper</option>
                 </optgroup>
-                <optgroup label="Phase 2: High Density (Months 4-6)">
-                    <option value="P2 - Day 1: Upper">Phase 2 - Day 1: Upper Body</option>
-                    <option value="P2 - Day 2: Lower">Phase 2 - Day 2: Lower Body</option>
-                    <option value="P2 - Day 3: Push">Phase 2 - Day 3: Push</option>
-                    <option value="P2 - Day 4: Pull">Phase 2 - Day 4: Pull</option>
-                    <option value="P2 - Day 5: Legs">Phase 2 - Day 5: Legs & V-Taper</option>
+                <optgroup id="custom-routines-group" label="Custom & AI Routines">
                 </optgroup>
             </select>
         </div>
@@ -294,6 +304,7 @@
             
             <div class="volume-badge">
                 Estimated Session Volume: <span id="session-volume">0</span> kg
+                <div id="auto-save-indicator" style="font-size:0.75rem; color:var(--accent-volt); margin-top:4px;">Auto-Save Enabled</div>
             </div>
 
             <button type="button" onclick="saveWorkoutSession()">LOG WORKOUT SESSION</button>
@@ -316,52 +327,75 @@
 </div>
 
 <script>
-// Master Exercise Structure with Sets & Superset Pairings
+// Known exercise alternatives database for quick swaps
+const exerciseAlternatives = {
+    "Close-Grip Barbell Bench Press": ["Triceps Dip Machine", "Dumbbell Neutral Bench Press", "Weighted Parallel Bar Dips", "JM Press"],
+    "Cable Low-to-High Chest Flyes": ["Dumbbell Flyes", "Pec Deck Machine", "Incline Cable Flyes"],
+    "Barbell Incline Bench Press": ["Incline Dumbbell Press", "Smith Machine Incline Press", "Incline Chest Press Machine"],
+    "Neutral-Grip Lat Pulldown": ["Wide-Grip Lat Pulldown", "Weighted Pull-ups", "Meadows Row"],
+    "Barbell Back Squat / Hack Squat": ["Goblet Squat", "Leg Press 45°", "Smith Machine Squat"],
+    "Romanian Deadlift (RDL)": ["Dumbbell RDL", "Single-Leg Dumbbell RDL", "Good Mornings"],
+    "Overhead Barbell Press (OHP)": ["Seated Dumbbell Overhead Press", "Machine Shoulder Press", "Landmine Press"]
+};
+
+// Master Exercise Structure with Strict 6-8 Heavy Rep Target
 const routines = {
     "P1 - Day 1: Upper": [
         { name: "Barbell Incline Bench Press", sets: 4, target: "6-8 reps", query: "Incline+Barbell+Bench+Press", superset: null },
-        { name: "Weighted Chest Dips", sets: 3, target: "8-10 reps", query: "Chest+Dips+form", superset: "SUPERSET B (Chest + Lat Width)" },
-        { name: "Neutral-Grip Lat Pulldown", sets: 3, target: "8-10 reps", query: "Lat+Pulldown+form", superset: "SUPERSET B (Chest + Lat Width)" },
-        { name: "Standing Cable Lateral Raises", sets: 4, target: "10-12 reps", query: "Cable+Lateral+Raise", superset: "SUPERSET C (Delts & Upper Back)" },
-        { name: "Face Pulls", sets: 4, target: "12-15 reps", query: "Face+Pulls+form", superset: "SUPERSET C (Delts & Upper Back)" },
-        { name: "Incline Dumbbell Bicep Curls", sets: 3, target: "10-12 reps", query: "Incline+Dumbbell+Curl", superset: null }
+        { name: "Close-Grip Barbell Bench Press", sets: 3, target: "6-8 reps", query: "Close+Grip+Bench+Press", superset: "SUPERSET B (Upper/Mid Chest + Flyes)" },
+        { name: "Cable Low-to-High Chest Flyes", sets: 3, target: "6-8 reps", query: "Cable+Low+to+High+Fly", superset: "SUPERSET B (Upper/Mid Chest + Flyes)" },
+        { name: "Neutral-Grip Lat Pulldown", sets: 4, target: "6-8 reps", query: "Lat+Pulldown+form", superset: null },
+        { name: "Standing Cable Lateral Raises", sets: 4, target: "6-8 reps", query: "Cable+Lateral+Raise", superset: "SUPERSET C (Delts & Upper Back)" },
+        { name: "Face Pulls", sets: 4, target: "6-8 reps", query: "Face+Pulls+form", superset: "SUPERSET C (Delts & Upper Back)" },
+        { name: "Incline Dumbbell Bicep Curls", sets: 3, target: "6-8 reps", query: "Incline+Dumbbell+Curl", superset: null }
     ],
     "P1 - Day 2: Lower": [
         { name: "Barbell Back Squat / Hack Squat", sets: 4, target: "6-8 reps", query: "Barbell+Back+Squat", superset: null },
-        { name: "Romanian Deadlift (RDL)", sets: 3, target: "8-10 reps", query: "Romanian+Deadlift", superset: null },
-        { name: "Leg Press 45°", sets: 3, target: "10-12 reps", query: "Leg+Press+form", superset: "SUPERSET C (Quad & Hamstring Density)" },
-        { name: "Lying or Seated Leg Curl", sets: 3, target: "10-12 reps", query: "Lying+Leg+Curl", superset: "SUPERSET C (Quad & Hamstring Density)" },
-        { name: "Standing Calf Raises", sets: 4, target: "12-15 reps", query: "Standing+Calf+Raise", superset: null }
+        { name: "Romanian Deadlift (RDL)", sets: 4, target: "6-8 reps", query: "Romanian+Deadlift", superset: null },
+        { name: "Leg Press 45°", sets: 3, target: "6-8 reps", query: "Leg+Press+form", superset: "SUPERSET C (Quad & Hamstring Overload)" },
+        { name: "Lying or Seated Leg Curl", sets: 3, target: "6-8 reps", query: "Lying+Leg+Curl", superset: "SUPERSET C (Quad & Hamstring Overload)" },
+        { name: "Standing Calf Raises", sets: 4, target: "6-8 reps", query: "Standing+Calf+Raise", superset: null }
     ],
     "P1 - Day 3: Push": [
         { name: "Overhead Barbell Press (OHP)", sets: 4, target: "6-8 reps", query: "Overhead+Barbell+Press", superset: null },
-        { name: "Flat Dumbbell Bench Press", sets: 3, target: "8-10 reps", query: "Dumbbell+Bench+Press", superset: "SUPERSET B (Chest & Side Delts)" },
-        { name: "Dumbbell Lateral Raises", sets: 3, target: "10-12 reps", query: "Dumbbell+Lateral+Raise", superset: "SUPERSET B (Chest & Side Delts)" },
-        { name: "Cable Low-to-High Flyes", sets: 3, target: "12-15 reps", query: "Cable+Low+to+High+Fly", superset: null },
-        { name: "Cable Triceps Pushdowns", sets: 3, target: "10-12 reps", query: "Tricep+Pushdown", superset: "SUPERSET D (Triceps Overload)" },
-        { name: "Overhead Cable Triceps Extensions", sets: 3, target: "10-12 reps", query: "Overhead+Cable+Tricep+Extension", superset: "SUPERSET D (Triceps Overload)" }
+        { name: "Flat Dumbbell Bench Press", sets: 4, target: "6-8 reps", query: "Dumbbell+Bench+Press", superset: "SUPERSET B (Chest & Side Delts)" },
+        { name: "Dumbbell Lateral Raises", sets: 4, target: "6-8 reps", query: "Dumbbell+Lateral+Raise", superset: "SUPERSET B (Chest & Side Delts)" },
+        { name: "Cable Low-to-High Chest Flyes", sets: 3, target: "6-8 reps", query: "Cable+Low+to+High+Fly", superset: null },
+        { name: "Cable Triceps Pushdowns", sets: 3, target: "6-8 reps", query: "Tricep+Pushdown", superset: "SUPERSET D (Heavy Triceps)" },
+        { name: "Overhead Cable Triceps Extensions", sets: 3, target: "6-8 reps", query: "Overhead+Cable+Tricep+Extension", superset: "SUPERSET D (Heavy Triceps)" }
     ],
     "P1 - Day 4: Pull": [
         { name: "Heavy Barbell Row / T-Bar Row", sets: 4, target: "6-8 reps", query: "Barbell+Row", superset: null },
-        { name: "Wide-Grip Lat Pulldown", sets: 3, target: "8-10 reps", query: "Wide+Grip+Lat+Pulldown", superset: "SUPERSET B (Lat Width & Thickness)" },
-        { name: "Chest-Supported Seated Cable Row", sets: 3, target: "8-10 reps", query: "Seated+Cable+Row", superset: "SUPERSET B (Lat Width & Thickness)" },
-        { name: "Dumbbell Rear Delt Flyes", sets: 3, target: "12-15 reps", query: "Rear+Delt+Fly", superset: null },
-        { name: "EZ-Bar Preacher Curls", sets: 3, target: "8-10 reps", query: "Preacher+Curl", superset: "SUPERSET D (Bicep Hypertrophy)" },
-        { name: "Cable Hammer Curls", sets: 3, target: "10-12 reps", query: "Cable+Hammer+Curl", superset: "SUPERSET D (Bicep Hypertrophy)" }
+        { name: "Wide-Grip Lat Pulldown", sets: 4, target: "6-8 reps", query: "Wide+Grip+Lat+Pulldown", superset: "SUPERSET B (Lat Width & Thickness)" },
+        { name: "Chest-Supported Seated Cable Row", sets: 4, target: "6-8 reps", query: "Seated+Cable+Row", superset: "SUPERSET B (Lat Width & Thickness)" },
+        { name: "Dumbbell Rear Delt Flyes", sets: 3, target: "6-8 reps", query: "Rear+Delt+Fly", superset: null },
+        { name: "EZ-Bar Preacher Curls", sets: 3, target: "6-8 reps", query: "Preacher+Curl", superset: "SUPERSET D (Heavy Biceps)" },
+        { name: "Cable Hammer Curls", sets: 3, target: "6-8 reps", query: "Cable+Hammer+Curl", superset: "SUPERSET D (Heavy Biceps)" }
     ],
     "P1 - Day 5: Legs": [
-        { name: "Bulgarian Split Squats", sets: 3, target: "8-10 reps", query: "Bulgarian+Split+Squat", superset: null },
-        { name: "Leg Extensions", sets: 3, target: "12-15 reps", query: "Leg+Extension", superset: null },
-        { name: "Machine Seated Calf Raises", sets: 3, target: "12-15 reps", query: "Seated+Calf+Raise", superset: "SUPERSET C (Calves & Shoulder Finisher)" },
-        { name: "Heavy Cable Lateral Raises", sets: 3, target: "12-15 reps", query: "Cable+Lateral+Raise", superset: "SUPERSET C (Calves & Shoulder Finisher)" },
-        { name: "Hanging Leg Raises", sets: 3, target: "15 reps", query: "Hanging+Leg+Raise", superset: null }
+        { name: "Bulgarian Split Squats", sets: 4, target: "6-8 reps", query: "Bulgarian+Split+Squat", superset: null },
+        { name: "Leg Extensions", sets: 4, target: "6-8 reps", query: "Leg+Extension", superset: null },
+        { name: "Machine Seated Calf Raises", sets: 4, target: "6-8 reps", query: "Seated+Calf+Raise", superset: "SUPERSET C (Calves & Heavy Side Delts)" },
+        { name: "Heavy Cable Lateral Raises", sets: 4, target: "6-8 reps", query: "Cable+Lateral+Raise", superset: "SUPERSET C (Calves & Heavy Side Delts)" },
+        { name: "Hanging Leg Raises", sets: 3, target: "6-8 reps", query: "Hanging+Leg+Raise", superset: null }
     ]
 };
 
 document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
 
 let workoutHistory = JSON.parse(localStorage.getItem('iron_recomp_data')) || [];
+let customRoutines = JSON.parse(localStorage.getItem('iron_custom_routines')) || {};
 let chartInstance = null;
+
+// Populate Custom AI Routines into Dropdown
+function loadCustomRoutinesDropdown() {
+    const group = document.getElementById('custom-routines-group');
+    group.innerHTML = '';
+    Object.keys(customRoutines).forEach(key => {
+        routines[key] = customRoutines[key];
+        group.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
+    });
+}
 
 function getPastPerformance(exName) {
     const pastSessions = workoutHistory
@@ -388,18 +422,25 @@ function renderExerciseHTML(ex, idx) {
             <div class="set-box">
                 <label>Set ${s}</label>
                 <div class="set-inputs-row">
-                    <input type="number" step="0.5" id="weight-${idx}-set-${s}" placeholder="kg" oninput="calculateTotalVolume()">
-                    <input type="number" id="reps-${idx}-set-${s}" placeholder="reps" oninput="calculateTotalVolume()">
+                    <input type="number" step="0.5" id="weight-${idx}-set-${s}" placeholder="kg" oninput="handleInputAutoSave()">
+                    <input type="number" id="reps-${idx}-set-${s}" placeholder="reps" oninput="handleInputAutoSave()">
                 </div>
             </div>
         `;
     }
 
     return `
-        <div class="exercise-item">
+        <div class="exercise-item" id="exercise-item-${idx}">
             <div class="exercise-header">
-                <span>${ex.name} <span class="sets-tag">${ex.sets} SETS</span> <span class="target-tag">${ex.target}</span></span>
-                <a class="form-link" href="https://www.youtube.com/results?search_query=${ex.query}" target="_blank">FORM ↗</a>
+                <span>
+                    <span id="ex-name-text-${idx}">${ex.name}</span> 
+                    <span class="sets-tag">${ex.sets} SETS</span> 
+                    <span class="target-tag">${ex.target}</span>
+                </span>
+                <div>
+                    <button type="button" class="btn-mini btn-secondary" onclick="swapExercise(${idx})">🔄 Swap</button>
+                    <a class="form-link" id="ex-link-${idx}" href="https://www.youtube.com/results?search_query=${ex.query}" target="_blank">FORM ↗</a>
+                </div>
             </div>
             <div class="past-perf">${pastText}</div>
             <div style="text-align:right;">
@@ -448,6 +489,44 @@ function loadWorkoutForm() {
     calculateTotalVolume();
 }
 
+// 🔄 Exercise Swap Functionality
+function swapExercise(idx) {
+    const key = document.getElementById('workout-type').value;
+    if (!key || !routines[key]) return;
+
+    const currentEx = routines[key][idx];
+    const options = exerciseAlternatives[currentEx.name] || ["Dumbbell Alternative", "Cable Alternative", "Machine Alternative"];
+    
+    let promptMsg = `Select an alternative for "${currentEx.name}":\n`;
+    options.forEach((opt, i) => { promptMsg += `${i + 1}. ${opt}\n`; });
+    promptMsg += `${options.length + 1}. Custom Entry`;
+
+    const choice = prompt(promptMsg, "1");
+    if (!choice) return;
+
+    let newName = "";
+    const choiceNum = parseInt(choice);
+    if (choiceNum >= 1 && choiceNum <= options.length) {
+        newName = options[choiceNum - 1];
+    } else {
+        newName = prompt("Enter custom exercise name:", "Custom Exercise");
+    }
+
+    if (newName && newName.trim() !== "") {
+        currentEx.name = newName.trim();
+        currentEx.query = encodeURIComponent(newName.trim());
+        document.getElementById(`ex-name-text-${idx}`).innerText = currentEx.name;
+        document.getElementById(`ex-link-${idx}`).href = `https://www.youtube.com/results?search_query=${currentEx.query}`;
+        populateChartDropdown();
+    }
+}
+
+// 💾 Instant Auto-Save Requirement
+function handleInputAutoSave() {
+    calculateTotalVolume();
+    saveWorkoutSession(true); // Auto-save silently
+}
+
 function copyFirstSet(exIdx, totalSets) {
     const firstWeight = document.getElementById(`weight-${exIdx}-set-1`).value;
     const firstReps = document.getElementById(`reps-${exIdx}-set-1`).value;
@@ -456,7 +535,7 @@ function copyFirstSet(exIdx, totalSets) {
         if (firstWeight) document.getElementById(`weight-${exIdx}-set-${s}`).value = firstWeight;
         if (firstReps) document.getElementById(`reps-${exIdx}-set-${s}`).value = firstReps;
     }
-    calculateTotalVolume();
+    handleInputAutoSave();
 }
 
 function calculateTotalVolume() {
@@ -479,10 +558,13 @@ function calculateTotalVolume() {
     document.getElementById('session-volume').innerText = totalVolume.toLocaleString();
 }
 
-function saveWorkoutSession() {
+function saveWorkoutSession(isSilent = false) {
     const date = document.getElementById('workout-date').value;
     const key = document.getElementById('workout-type').value;
-    if (!date || !key) return alert("Select date and workout.");
+    if (!date || !key) {
+        if (!isSilent) alert("Select date and workout.");
+        return;
+    }
 
     const session = { date, routine: key, exercises: {} };
 
@@ -503,7 +585,7 @@ function saveWorkoutSession() {
         if (setsData.length > 0) {
             session.exercises[ex.name] = {
                 sets: setsData,
-                weight: maxWeight, // for single-metric backwards compatibility
+                weight: maxWeight,
                 reps: maxReps
             };
         }
@@ -513,10 +595,51 @@ function saveWorkoutSession() {
     workoutHistory.push(session);
     localStorage.setItem('iron_recomp_data', JSON.stringify(workoutHistory));
 
-    alert("SESSION LOGGED! KEEP UP THE GAINS.");
-    populateChartDropdown();
-    loadWorkoutForm();
-    renderChart();
+    const indicator = document.getElementById('auto-save-indicator');
+    if (indicator) {
+        indicator.innerText = `Auto-Saved at ${new Date().toLocaleTimeString()}`;
+    }
+
+    if (!isSilent) {
+        alert("SESSION LOGGED! KEEP UP THE GAINS.");
+        populateChartDropdown();
+        loadWorkoutForm();
+        renderChart();
+    }
+}
+
+// 🤖 Gemini AI Prompt Generator & Saver
+function copyAIPrompt() {
+    const name = document.getElementById('ai-routine-name').value || "Custom AI Routine";
+    const promptText = `Acts as an elite strength coach. Generate a JSON array for a custom workout named "${name}" targeting HEAVY lifting (6-8 reps). Output ONLY valid JSON array format like this:
+[
+  {"name":"Incline Dumbbell Press","sets":4,"target":"6-8 reps","query":"Incline+Dumbbell+Press","superset":null},
+  {"name":"Close-Grip Bench Press","sets":3,"target":"6-8 reps","query":"Close+Grip+Bench+Press","superset":"SUPERSET A"},
+  {"name":"Cable Chest Flyes","sets":3,"target":"6-8 reps","query":"Cable+Chest+Flyes","superset":"SUPERSET A"}
+]`;
+
+    navigator.clipboard.writeText(promptText).then(() => {
+        alert("Gemini AI Prompt copied to clipboard! Paste it into Gemini, then paste its JSON output below.");
+    });
+}
+
+function saveAIRoutine() {
+    const name = document.getElementById('ai-routine-name').value;
+    const jsonStr = document.getElementById('ai-json-input').value;
+
+    if (!name || !jsonStr) return alert("Please provide both a routine name and JSON output.");
+
+    try {
+        const parsedExercises = JSON.parse(jsonStr);
+        if (!Array.isArray(parsedExercises)) throw new Error("JSON must be an array.");
+
+        customRoutines[name] = parsedExercises;
+        localStorage.setItem('iron_custom_routines', JSON.stringify(customRoutines));
+        loadCustomRoutinesDropdown();
+        alert(`Routine "${name}" saved successfully! You can now select it from the workout dropdown.`);
+    } catch (e) {
+        alert("Invalid JSON format from Gemini. Please ensure you copied only the JSON array.");
+    }
 }
 
 // Rest Timer
@@ -626,6 +749,8 @@ function fetchRemoteJSON() {
         });
 }
 
+// Init
+loadCustomRoutinesDropdown();
 populateChartDropdown();
 </script>
 </body>
