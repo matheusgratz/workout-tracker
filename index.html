@@ -14,7 +14,7 @@
             --text-dim: #b0b0b0;
             --border: #333333;
             --superset-bg: #262626;
-            --warmup-bg: #3a2e1b;
+            --baseline-bg: #2d3748;
         }
 
         body {
@@ -32,7 +32,7 @@
             max-width: 600px;
         }
 
-        h1, h2, h3 {
+        h1, h2 {
             text-align: center;
             margin-bottom: 5px;
         }
@@ -91,7 +91,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .exercise-name {
@@ -106,6 +106,38 @@
             border: 1px solid var(--accent);
             padding: 2px 8px;
             border-radius: 4px;
+        }
+
+        .baseline-info {
+            background: var(--baseline-bg);
+            color: #63b3ed;
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .copy-btn-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+        }
+
+        .btn-copy-sets {
+            background: #319795;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            font-size: 0.75em;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-copy-sets:hover {
+            background: #2c7a7b;
         }
 
         .set-row {
@@ -223,146 +255,61 @@
 </div>
 
 <script>
-    // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjyaBTfSvdFoB1MRgiHlNWXi4mMT44eBhHwmxaathLA5fIRGBfICh1T20Dv9TYlEw18w/exec";
 
     const workouts = {
         'A': {
             title: "Workout A — Lat Width, Upper Chest & Core",
             supersets: [
-                {
-                    tag: "Superset A",
-                    exercises: [
-                        { name: "Wide-Grip Lat Pulldown", query: "wide grip lat pulldown form jeff nippard" },
-                        { name: "Incline Barbell/DB Bench Press", query: "incline dumbbell press form jeff nippard" }
-                    ]
-                },
-                {
-                    tag: "Superset B",
-                    exercises: [
-                        { name: "Chest-Supported T-Bar Row", query: "chest supported t bar row form jeff nippard" },
-                        { name: "Flat Barbell/Smith Press", query: "flat bench press form jeff nippard" }
-                    ]
-                },
-                {
-                    tag: "Superset C",
-                    exercises: [
-                        { name: "Smith Machine Squat / Leg Press 45", query: "smith machine squat form jeff nippard" },
-                        { name: "Cable Kneeling Crunch", query: "cable kneeling crunch form jeff nippard" }
-                    ]
-                },
-                {
-                    tag: "Superset D",
-                    exercises: [
-                        { name: "Cable Lateral Raise", query: "cable lateral raise form jeff nippard" },
-                        { name: "Standing/Seated Calf Raise", query: "standing calf raise form jeff nippard" }
-                    ]
-                }
+                { tag: "Superset A", exercises: [{ name: "Wide-Grip Lat Pulldown", query: "wide grip lat pulldown form jeff nippard" }, { name: "Incline Barbell/DB Bench Press", query: "incline dumbbell press form jeff nippard" }] },
+                { tag: "Superset B", exercises: [{ name: "Chest-Supported T-Bar Row", query: "chest supported t bar row form jeff nippard" }, { name: "Flat Barbell/Smith Press", query: "flat bench press form jeff nippard" }] },
+                { tag: "Superset C", exercises: [{ name: "Smith Machine Squat / Leg Press 45", query: "smith machine squat form jeff nippard" }, { name: "Cable Kneeling Crunch", query: "cable kneeling crunch form jeff nippard" }] },
+                { tag: "Superset D", exercises: [{ name: "Cable Lateral Raise", query: "cable lateral raise form jeff nippard" }, { name: "Standing/Seated Calf Raise", query: "standing calf raise form jeff nippard" }] }
             ]
         },
         'B': {
             title: "Workout B — Shoulder Width, Arms & Posterior Chain",
             supersets: [
-                {
-                    tag: "Superset A",
-                    exercises: [
-                        { name: "Cable Lateral Raise (Lean-in w/ Cuffs)", query: "cable lateral raise form jeff nippard" },
-                        { name: "Seated DB Overhead Press", query: "seated dumbbell overhead press form jeff nippard" }
-                    ]
-                },
-                {
-                    tag: "Superset B",
-                    exercises: [
-                        { name: "Bayesian Cable Curl", query: "bayesian cable curl form jeff nippard" },
-                        { name: "Overhead Cable Triceps Extension", query: "overhead cable tricep extension form jeff nippard" }
-                    ]
-                },
-                {
-                    tag: "Superset C",
-                    exercises: [
-                        { name: "Seated Leg Curl", query: "seated leg curl form jeff nippard" },
-                        { name: "Good Morning / 45° Back Extension", query: "barbell good morning form jeff nippard" }
-                    ]
-                },
-                {
-                    tag: "Superset D",
-                    exercises: [
-                        { name: "Reverse Pec Deck", query: "reverse pec deck form jeff nippard" },
-                        { name: "DB Wrist Curl / Reverse Curl", query: "dumbbell wrist curl form" }
-                    ]
-                }
+                { tag: "Superset A", exercises: [{ name: "Cable Lateral Raise (Lean-in w/ Cuffs)", query: "cable lateral raise form jeff nippard" }, { name: "Seated DB Overhead Press", query: "seated dumbbell overhead press form jeff nippard" }] },
+                { tag: "Superset B", exercises: [{ name: "Bayesian Cable Curl", query: "bayesian cable curl form jeff nippard" }, { name: "Overhead Cable Triceps Extension", query: "overhead cable tricep extension form jeff nippard" }] },
+                { tag: "Superset C", exercises: [{ name: "Seated Leg Curl", query: "seated leg curl form jeff nippard" }, { name: "Good Morning / 45° Back Extension", query: "barbell good morning form jeff nippard" }] },
+                { tag: "Superset D", exercises: [{ name: "Reverse Pec Deck", query: "reverse pec deck form jeff nippard" }, { name: "DB Wrist Curl / Reverse Curl", query: "dumbbell wrist curl form" }] }
             ]
         },
         'C': {
             title: "Workout C — Vertical Pull, Chest Isolation & Obliques",
             supersets: [
-                {
-                    tag: "Superset A",
-                    exercises: [
-                        { name: "Neutral-Grip Pull-ups / Pulldown", query: "neutral grip lat pulldown form jeff nippard" },
-                        { name: "Pec Deck Flye / Cable Flye", query: "pec deck flye form jeff nippard" }
-                    ]
-                },
-                {
-                    tag: "Superset B",
-                    exercises: [
-                        { name: "Reverse Cable Crossover", query: "reverse cable crossover form jeff nippard" },
-                        { name: "Standing Cable Lateral Raise", query: "cable lateral raise form jeff nippard" }
-                    ]
-                },
-                {
-                    tag: "Superset C",
-                    exercises: [
-                        { name: "Barbell Romanian Deadlift (RDL)", query: "romanian deadlift form jeff nippard" },
-                        { name: "Cable Woodchoppers / Side Bends", query: "cable woodchopper form" }
-                    ]
-                },
-                {
-                    tag: "Superset D",
-                    exercises: [
-                        { name: "Machine Preacher Curl", query: "machine preacher curl form jeff nippard" },
-                        { name: "Triceps Pressdown (Bar/Rope)", query: "tricep pushdown form jeff nippard" }
-                    ]
-                }
+                { tag: "Superset A", exercises: [{ name: "Neutral-Grip Pull-ups / Pulldown", query: "neutral grip lat pulldown form jeff nippard" }, { name: "Pec Deck Flye / Cable Flye", query: "pec deck flye form jeff nippard" }] },
+                { tag: "Superset B", exercises: [{ name: "Reverse Cable Crossover", query: "reverse cable crossover form jeff nippard" }, { name: "Standing Cable Lateral Raise", query: "cable lateral raise form jeff nippard" }] },
+                { tag: "Superset C", exercises: [{ name: "Barbell Romanian Deadlift (RDL)", query: "romanian deadlift form jeff nippard" }, { name: "Cable Woodchoppers / Side Bends", query: "cable woodchopper form" }] },
+                { tag: "Superset D", exercises: [{ name: "Machine Preacher Curl", query: "machine preacher curl form jeff nippard" }, { name: "Triceps Pressdown (Bar/Rope)", query: "tricep pushdown form jeff nippard" }] }
             ]
         },
         'D': {
             title: "Workout D — Arm Hypertrophy, Legs & Core Stability",
             supersets: [
-                {
-                    tag: "Superset A",
-                    exercises: [
-                        { name: "Preacher EZ-Bar / DB Curl", query: "ez bar preacher curl form jeff nippard" },
-                        { name: "Barbell Skullcrushers", query: "barbell skullcrushers form jeff nippard" }
-                    ]
-                },
-                {
-                    tag: "Superset B",
-                    exercises: [
-                        { name: "Seated Leg Extension", query: "seated leg extension form jeff nippard" },
-                        { name: "Machine Hip Abduction / Adduction", query: "hip abduction machine form" }
-                    ]
-                },
-                {
-                    tag: "Superset C",
-                    exercises: [
-                        { name: "Hanging Leg/Knee Raises", query: "hanging leg raise form" },
-                        { name: "Cable Pallof Press / Ab Wheel", query: "pallof press form" }
-                    ]
-                },
-                {
-                    tag: "Superset D",
-                    exercises: [
-                        { name: "Trap-Bar / Barbell Shrug", query: "trap bar shrug form jeff nippard" },
-                        { name: "Cable Lat Prayer / Pullover", query: "lat prayer form jeff nippard" }
-                    ]
-                }
+                { tag: "Superset A", exercises: [{ name: "Preacher EZ-Bar / DB Curl", query: "ez bar preacher curl form jeff nippard" }, { name: "Barbell Skullcrushers", query: "barbell skullcrushers form jeff nippard" }] },
+                { tag: "Superset B", exercises: [{ name: "Seated Leg Extension", query: "seated leg extension form jeff nippard" }, { name: "Machine Hip Abduction / Adduction", query: "hip abduction machine form" }] },
+                { tag: "Superset C", exercises: [{ name: "Hanging Leg/Knee Raises", query: "hanging leg raise form" }, { name: "Cable Pallof Press / Ab Wheel", query: "pallof press form" }] },
+                { tag: "Superset D", exercises: [{ name: "Trap-Bar / Barbell Shrug", query: "trap bar shrug form jeff nippard" }, { name: "Cable Lat Prayer / Pullover", query: "lat prayer form jeff nippard" }] }
             ]
         }
     };
 
     let currentDay = 'A';
     let timerInterval = null;
+    let exerciseHistory = {};
+
+    // Fetch baseline historical weights/reps from Google Sheets
+    async function fetchHistory() {
+        try {
+            const res = await fetch(GOOGLE_SCRIPT_URL);
+            exerciseHistory = await res.json();
+            loadWorkout(currentDay);
+        } catch (e) {
+            console.log("Could not load history, running with blank baselines.", e);
+        }
+    }
 
     function loadWorkout(dayKey) {
         currentDay = dayKey;
@@ -379,6 +326,8 @@
             ss.exercises.forEach((ex, exIndex) => {
                 const exId = `ex_${ssIndex}_${exIndex}`;
                 const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.query)}`;
+                const history = exerciseHistory[ex.name];
+                const baselineText = history ? `Baseline: ${history.weight} lbs × ${history.reps} reps` : `Baseline: No prior data`;
 
                 ssHtml += `
                     <div class="exercise-block">
@@ -387,10 +336,18 @@
                             <a href="${ytUrl}" target="_blank" class="form-link">Form Guide 🎥</a>
                         </div>
                         
+                        <div class="baseline-info">
+                            <span>📊 ${baselineText}</span>
+                        </div>
+
+                        <div class="copy-btn-bar">
+                            <button class="btn-copy-sets" onclick="copySet1ToWorkingSets('${exId}')">📋 Copy Set 1 to Working Sets</button>
+                        </div>
+                        
                         <!-- Warmup Set -->
                         <div class="set-row">
                             <span class="set-label">Warmup</span>
-                            <input type="number" placeholder="Weight" id="${exId}_w_w" oninput="calcWarmup('${exId}')">
+                            <input type="number" placeholder="Weight" id="${exId}_w_w">
                             <input type="number" placeholder="Reps (6-8)" id="${exId}_w_r">
                             <button class="btn-save-set" id="btn_${exId}_w" onclick="saveSingleSet('${ss.tag}', '${ex.name}', 'Warmup', '${exId}_w_r', '${exId}_w_w', this)">✓</button>
                         </div>
@@ -413,7 +370,7 @@
         });
     }
 
-    // Automated 80% Warmup Calculation
+    // Automatically calculate 80% warm-up weight when entering Set 1
     function updateWarmupFromSet1(exId, setNum) {
         if (setNum === 1) {
             const set1Weight = parseFloat(document.getElementById(`${exId}_s1_w`).value);
@@ -424,7 +381,23 @@
         }
     }
 
-    // Single Set Save to Google Sheet
+    // Copy Set 1 values to Sets 2 and 3 (excluding Warmup)
+    function copySet1ToWorkingSets(exId) {
+        const s1Weight = document.getElementById(`${exId}_s1_w`).value;
+        const s1Reps = document.getElementById(`${exId}_s1_r`).value;
+
+        if (!s1Weight && !s1Reps) {
+            alert("Please enter weight or reps in Set 1 first.");
+            return;
+        }
+
+        [2, 3].forEach(s => {
+            document.getElementById(`${exId}_s${s}_w`).value = s1Weight;
+            document.getElementById(`${exId}_s${s}_r`).value = s1Reps;
+        });
+    }
+
+    // Save individual set directly to Google Sheets
     function saveSingleSet(superset, exercise, setType, repsId, weightId, btn) {
         const reps = document.getElementById(repsId).value;
         const weight = document.getElementById(weightId).value;
@@ -455,7 +428,7 @@
         }).then(() => {
             btn.classList.add('saved');
             btn.innerText = "Saved";
-            startTimer(120); // Auto-trigger 2-minute rest timer
+            startTimer(120);
         }).catch(err => {
             alert("Save failed: " + err);
             btn.disabled = false;
@@ -463,7 +436,7 @@
         });
     }
 
-    // Finish & Sync Full Workout
+    // Sync all filled sets at once
     function finishWorkout() {
         const data = workouts[currentDay];
         const rows = [];
@@ -473,14 +446,12 @@
             ss.exercises.forEach((ex, exIndex) => {
                 const exId = `ex_${ssIndex}_${exIndex}`;
                 
-                // Warmup
                 const wReps = document.getElementById(`${exId}_w_r`).value;
                 const wWeight = document.getElementById(`${exId}_w_w`).value;
                 if (wReps && wWeight) {
                     rows.push({ timestamp, workoutDay: `Day ${currentDay}`, superset: ss.tag, exercise: ex.name, setType: 'Warmup', reps: wReps, weight: wWeight });
                 }
 
-                // Working Sets
                 [1, 2, 3].forEach(s => {
                     const sReps = document.getElementById(`${exId}_s${s}_r`).value;
                     const sWeight = document.getElementById(`${exId}_s${s}_w`).value;
@@ -534,8 +505,8 @@
         document.getElementById('timerDisplay').innerText = `${m}:${s}`;
     }
 
-    // Initialize Day A on load
-    loadWorkout('A');
+    // Run history fetch on start
+    fetchHistory();
 </script>
 </body>
 </html>
