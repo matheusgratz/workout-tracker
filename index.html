@@ -136,10 +136,6 @@
             font-weight: bold;
         }
 
-        .btn-copy-sets:hover {
-            background: #2c7a7b;
-        }
-
         .set-row {
             display: grid;
             grid-template-columns: 80px 1fr 1fr 60px;
@@ -220,11 +216,40 @@
             margin-bottom: 80px;
         }
 
-        .status-msg {
+        /* Modal Popup */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-box {
+            background: var(--card-bg);
+            border: 1px solid var(--accent);
+            padding: 20px 30px;
+            border-radius: 10px;
             text-align: center;
-            color: #4caf50;
-            font-size: 0.9em;
-            margin-top: 5px;
+            max-width: 80%;
+        }
+
+        .modal-box h3 {
+            color: var(--accent);
+            margin-top: 0;
+        }
+
+        .modal-box button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
         }
     </style>
 </head>
@@ -242,8 +267,7 @@
 
     <div id="workoutContainer"></div>
 
-    <button class="finish-btn" onclick="finishWorkout()">Finish & Sync Workout</button>
-    <div id="statusMsg" class="status-msg"></div>
+    <button class="finish-btn" id="finishBtn" onclick="finishWorkout()">Finish & Sync Workout</button>
 </div>
 
 <div class="timer-container">
@@ -254,8 +278,17 @@
     <button class="timer-btn" onclick="startTimer(120)">Start 2m Rest</button>
 </div>
 
+<!-- Success Modal -->
+<div class="modal-overlay" id="successModal">
+    <div class="modal-box">
+        <h3>🎉 Workout Synced!</h3>
+        <p>Your session has been saved to Google Sheets and your logs have been reset for next time.</p>
+        <button onclick="closeModal()">OK</button>
+    </div>
+</div>
+
 <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjyaBTfSvdFoB1MRgiHlNWXi4mMT44eBhHwmxaathLA5fIRGBfICh1T20Dv9TYlEw18w/exec"; //new
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4ZqXrgyw7sOp4TTKoH3Fco2MSHxqDLZnS4GYccyjhXGmeoiy6XYry5hXQU8IFAIFrBA/exec";
 
     const workouts = {
         'A': {
@@ -300,15 +333,17 @@
     let timerInterval = null;
     let exerciseHistory = {};
 
-    // Fetch baseline historical weights/reps from Google Sheets
-    async function fetchHistory() {
-        try {
-            const res = await fetch(GOOGLE_SCRIPT_URL);
-            exerciseHistory = await res.json();
-            loadWorkout(currentDay);
-        } catch (e) {
-            console.log("Could not load history, running with blank baselines.", e);
-        }
+    // JSONP callback function to receive baseline data from Google Apps Script
+    function receiveHistory(data) {
+        exerciseHistory = data;
+        loadWorkout(currentDay);
+    }
+
+    // Fetch history using JSONP to bypass CORS blocking
+    function fetchHistory() {
+        const script = document.createElement('script');
+        script.src = `${GOOGLE_SCRIPT_URL}?callback=receiveHistory`;
+        document.body.appendChild(script);
     }
 
     function loadWorkout(dayKey) {
@@ -370,7 +405,6 @@
         });
     }
 
-    // Automatically calculate 80% warm-up weight when entering Set 1
     function updateWarmupFromSet1(exId, setNum) {
         if (setNum === 1) {
             const set1Weight = parseFloat(document.getElementById(`${exId}_s1_w`).value);
@@ -381,7 +415,6 @@
         }
     }
 
-    // Copy Set 1 values to Sets 2 and 3 (excluding Warmup)
     function copySet1ToWorkingSets(exId) {
         const s1Weight = document.getElementById(`${exId}_s1_w`).value;
         const s1Reps = document.getElementById(`${exId}_s1_r`).value;
@@ -397,7 +430,6 @@
         });
     }
 
-    // Save individual set directly to Google Sheets
     function saveSingleSet(superset, exercise, setType, repsId, weightId, btn) {
         const reps = document.getElementById(repsId).value;
         const weight = document.getElementById(weightId).value;
@@ -436,7 +468,6 @@
         });
     }
 
-    // Sync all filled sets at once
     function finishWorkout() {
         const data = workouts[currentDay];
         const rows = [];
@@ -467,7 +498,9 @@
             return;
         }
 
-        document.getElementById('statusMsg').innerText = "Syncing full workout to Google Sheets...";
+        const finishBtn = document.getElementById('finishBtn');
+        finishBtn.disabled = true;
+        finishBtn.innerText = "Syncing...";
 
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
@@ -475,15 +508,37 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(rows)
         }).then(() => {
-            document.getElementById('statusMsg').innerText = "Workout successfully logged & saved!";
-            setTimeout(() => { document.getElementById('statusMsg').innerText = ""; }, 5000);
+            // Show custom success popup
+            document.getElementById('successModal').style.display = 'flex';
+
+            // Clean inputs to avoid double counting
+            clearInputs();
+
+            // Refresh baseline history
+            fetchHistory();
+
+            finishBtn.disabled = false;
+            finishBtn.innerText = "Finish & Sync Workout";
         }).catch(err => {
             alert("Sync failed: " + err);
-            document.getElementById('statusMsg').innerText = "";
+            finishBtn.disabled = false;
+            finishBtn.innerText = "Finish & Sync Workout";
         });
     }
 
-    // Rest Timer Logic
+    function clearInputs() {
+        document.querySelectorAll('input[type="number"]').forEach(input => input.value = '');
+        document.querySelectorAll('.btn-save-set').forEach(btn => {
+            btn.classList.remove('saved');
+            btn.innerText = '✓';
+            btn.disabled = false;
+        });
+    }
+
+    function closeModal() {
+        document.getElementById('successModal').style.display = 'none';
+    }
+
     function startTimer(seconds) {
         clearInterval(timerInterval);
         let timeLeft = seconds;
@@ -505,7 +560,7 @@
         document.getElementById('timerDisplay').innerText = `${m}:${s}`;
     }
 
-    // Run history fetch on start
+    // Load initial data
     fetchHistory();
 </script>
 </body>
