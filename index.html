@@ -3,943 +3,539 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IRON RECOMP // Gym & Training Hub</title>
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <title>V-Taper Workout Tracker</title>
     <style>
-        /* CSS Variables dynamically updated per profile */
         :root {
-            --bg-dark: #0a0e17;
-            --card-bg: #131b2e;
-            --accent-primary: #ccff00;
-            --accent-secondary: #00f2fe;
-            --accent-tertiary: #ff2a5f;
-            --accent-purple: #a855f7;
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
-            --border-color: #2a3752;
-            --font-head: 'Impact', 'Trebuchet MS', sans-serif;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent: #00adb5;
+            --accent-hover: #008c93;
+            --text: #eeeeee;
+            --text-dim: #b0b0b0;
+            --border: #333333;
+            --superset-bg: #262626;
+            --warmup-bg: #3a2e1b;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
             margin: 0;
             padding: 15px;
-            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg-dark) 70%);
-            min-height: 100vh;
-            transition: background-color 0.3s ease;
-        }
-
-        .container { max-width: 680px; margin: 0 auto; }
-
-        /* User Profile Modal Overlay */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 14, 23, 0.95);
             display: flex;
-            align-items: center;
             justify-content: center;
-            z-index: 9999;
         }
-        .modal-card {
-            background: var(--card-bg);
-            border: 2px solid var(--accent-primary);
-            border-radius: 16px;
-            padding: 24px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
-        }
-        .modal-card h2 { justify-content: center; margin-bottom: 8px; color: #ffffff; }
-        .modal-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px; }
-        
-        .user-btn {
-            padding: 14px;
-            margin-bottom: 12px;
-            font-size: 1.1rem;
-            border-radius: 10px;
-            cursor: pointer;
+
+        .container {
             width: 100%;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-        }
-        .user-btn-mr {
-            background: #0f172a;
-            border: 2px solid #ccff00;
-            color: #ccff00;
-        }
-        .user-btn-mr:hover {
-            background: #ccff00;
-            color: #000000;
-            box-shadow: 0 0 15px rgba(204, 255, 0, 0.4);
-        }
-        .user-btn-mrs {
-            background: #190a18;
-            border: 2px solid #ff1493;
-            color: #ff1493;
-        }
-        .user-btn-mrs:hover {
-            background: #ff1493;
-            color: #ffffff;
-            box-shadow: 0 0 15px rgba(255, 20, 147, 0.5);
+            max-width: 600px;
         }
 
-        /* Gym Header Style */
-        .app-header {
+        h1, h2, h3 {
             text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
             margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .app-header h1 {
-            font-family: var(--font-head);
-            font-size: 2.2rem;
-            margin: 0;
-            color: #ffffff;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-        .app-header h1 span { color: var(--accent-primary); }
-        .app-header p { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
-
-        .active-user-badge {
-            background: #1e293b;
-            border: 1px solid var(--accent-primary);
-            color: var(--accent-primary);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s ease;
+            overflow-x: auto;
+            padding-bottom: 5px;
         }
 
-        .card {
-            background: var(--card-bg);
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 18px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            position: relative;
-            overflow: hidden;
-        }
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 4px; height: 100%;
-            background: var(--accent-primary);
-        }
-
-        h2 {
-            font-family: var(--font-head);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: #ffffff;
-            margin-top: 0;
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .form-group { margin-bottom: 14px; }
-        label { display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
-        
-        input, select, textarea, button {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background: #0f172a;
-            color: var(--text-main);
-            font-size: 0.95rem;
-            box-sizing: border-box;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
-        }
-
-        button {
-            background: var(--accent-primary);
-            color: #000000;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: none;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: transform 0.1s ease, filter 0.2s ease;
-        }
-        button:active { transform: scale(0.98); }
-        button:hover { filter: brightness(1.1); }
-
-        .btn-secondary { background: #334155; color: #ffffff; }
-        .btn-success { background: var(--accent-secondary); color: #000000; }
-        .btn-mini { width: auto; padding: 4px 8px; font-size: 0.75rem; margin: 0; display: inline-block; }
-
-        /* Gym Rest Timer */
-        .timer-box {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #090d16;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-        }
-        .timer-btns { display: flex; gap: 8px; }
-        .timer-btn {
-            width: auto;
-            padding: 8px 14px;
-            font-size: 0.85rem;
-            margin: 0;
-            background: #1e293b;
-            color: var(--accent-primary);
-            border: 1px solid var(--border-color);
-        }
-        #timer-display {
-            font-family: monospace;
-            font-size: 1.8rem;
-            font-weight: 900;
-            color: var(--accent-tertiary);
-            text-shadow: 0 0 8px rgba(255, 42, 95, 0.4);
-        }
-
-        /* Superset Block Styling */
-        .superset-block {
-            background: #0c1322;
-            border: 1px solid var(--accent-purple);
-            border-left: 4px solid var(--accent-purple);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 16px;
-        }
-        .superset-badge {
-            background: var(--accent-purple);
-            color: #ffffff;
-            font-size: 0.75rem;
-            font-weight: 900;
-            padding: 3px 8px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            display: inline-block;
-            margin-bottom: 10px;
-            letter-spacing: 0.5px;
-        }
-
-        /* Exercise Item */
-        .exercise-item {
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .exercise-item:last-child { border-bottom: none; }
-        .exercise-header { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: #ffffff; margin-bottom: 4px; }
-        .target-tag {
-            background: #1e293b;
-            color: var(--accent-primary);
-            font-size: 0.75rem;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .sets-tag {
-            background: #334155;
-            color: var(--accent-secondary);
-            font-size: 0.75rem;
-            padding: 2px 8px;
-            border-radius: 4px;
-            margin-left: 4px;
-        }
-        .form-link { font-size: 0.8rem; color: var(--accent-secondary); text-decoration: none; font-weight: bold; margin-left: 6px; }
-        .past-perf { font-size: 0.8em; color: var(--accent-primary); margin: 4px 0 8px 0; font-family: monospace; }
-        
-        /* Set-by-Set Input Grid */
-        .set-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .set-box {
-            background: #090d16;
-            padding: 6px 8px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-        }
-        .set-box label { font-size: 0.7rem; margin-bottom: 2px; color: var(--text-muted); }
-        .set-inputs-row { display: flex; gap: 4px; }
-        .set-inputs-row input { padding: 6px; font-size: 0.85rem; text-align: center; }
-
-        .volume-badge {
-            background: #0f172a;
-            border: 1px dashed var(--accent-primary);
+        .nav button {
+            flex: 1;
             padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            color: var(--text-muted);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: bold;
         }
-        .volume-badge span { color: var(--accent-primary); font-weight: bold; font-size: 1.1rem; }
 
-        .chart-container { position: relative; height: 260px; width: 100%; margin-top: 10px; }
+        .nav button.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .superset-card {
+            background: var(--superset-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+
+        .superset-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+            margin-bottom: 12px;
+        }
+
+        .exercise-block {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .exercise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .exercise-name {
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .form-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.85em;
+            border: 1px solid var(--accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .set-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 60px;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .set-label {
+            font-size: 0.85em;
+            color: var(--text-dim);
+        }
+
+        input[type="number"] {
+            background: #2b2b2b;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .btn-save-set {
+            background: var(--border);
+            border: none;
+            color: var(--text);
+            padding: 6px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-save-set.saved {
+            background: #2e7d32;
+        }
+
+        .timer-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e1e1e;
+            border-top: 2px solid var(--accent);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+        }
+
+        .timer-display {
+            font-size: 1.3em;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .timer-btn {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .finish-btn {
+            width: 100%;
+            padding: 15px;
+            background: #2e7d32;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            margin-bottom: 80px;
+        }
+
+        .status-msg {
+            text-align: center;
+            color: #4caf50;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
 
-<!-- User Selection Overlay -->
-<div id="user-modal" class="modal-overlay">
-    <div class="modal-card">
-        <h2>🏋️ SELECT ATHLETE</h2>
-        <p>Choose profile to load custom theme, routines & training logs</p>
-        <button class="user-btn user-btn-mr" onclick="selectUser('MR. Maromba')">
-            <span>🦁</span> MR. Maromba (Volt Theme)
-        </button>
-        <button class="user-btn user-btn-mrs" onclick="selectUser('MRS. Maromba')">
-            <span>👑</span> MRS. Maromba (Rose Theme)
-        </button>
+<div class="container">
+    <h1>V-Taper Workout Tracker</h1>
+    
+    <div class="nav" id="workoutNav">
+        <button onclick="loadWorkout('A')" id="btnA" class="active">Day A</button>
+        <button onclick="loadWorkout('B')" id="btnB">Day B</button>
+        <button onclick="loadWorkout('C')" id="btnC">Day C</button>
+        <button onclick="loadWorkout('D')" id="btnD">Day D</button>
     </div>
+
+    <div id="workoutContainer"></div>
+
+    <button class="finish-btn" onclick="finishWorkout()">Finish & Sync Workout</button>
+    <div id="statusMsg" class="status-msg"></div>
 </div>
 
-<div class="container">
-    <div class="app-header">
-        <h1>IRON <span>RECOMP</span></h1>
-        <p id="subhead-text">5-Day Heavy Hypertrophy Engine</p>
-        <div id="active-user-display" class="active-user-badge" onclick="showUserModal()">
-            <span>👤 Active:</span> <span id="current-user-name">Select Profile</span> 🔄
-        </div>
+<div class="timer-container">
+    <div>
+        <span style="font-size: 0.85em; color: var(--text-dim);">Rest Timer:</span>
+        <span id="timerDisplay" class="timer-display">02:00</span>
     </div>
-
-    <!-- Data Management Header -->
-    <div class="card" style="border-left-color: var(--accent-secondary);">
-        <h2>💾 JSON Data Manager</h2>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn-success" onclick="exportDataFile()">Export JSON File</button>
-            <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importDataFile(event)">
-            <button class="btn-secondary" onclick="document.getElementById('import-file').click()">Load Local File</button>
-            <button class="btn-secondary" style="background:#1e293b;" onclick="fetchRemoteJSON()">Fetch Remote JSON</button>
-        </div>
-        <div id="data-status" style="font-size:0.8em; color:var(--text-muted); margin-top:8px; text-align:center;">Local Storage Active</div>
-    </div>
-
-    <!-- Gym Rest Timer -->
-    <div class="card" style="border-left-color: var(--accent-tertiary);">
-        <h2>⏱️ Iron Rest Timer</h2>
-        <div class="timer-box">
-            <div class="timer-btns">
-                <button class="timer-btn" onclick="startTimer(60)">60S</button>
-                <button class="timer-btn" onclick="startTimer(90)">90S</button>
-                <button class="timer-btn" onclick="startTimer(120)">120S</button>
-            </div>
-            <div id="timer-display">00:00</div>
-        </div>
-    </div>
-
-    <!-- AI Routine Builder Tool -->
-    <div class="card" style="border-left-color: var(--accent-purple);">
-        <h2>🤖 Gemini AI Routine Generator</h2>
-        <div class="form-group">
-            <label for="ai-routine-name">Custom Routine Name</label>
-            <input type="text" id="ai-routine-name" placeholder="e.g. Custom Phase 3 - Day 1 Upper">
-        </div>
-        <button class="btn-secondary" style="background:var(--accent-purple);" onclick="copyAIPrompt()">1. Copy Gemini AI Prompt</button>
-        <div class="form-group" style="margin-top:10px;">
-            <label for="ai-json-input">2. Paste Gemini JSON Output Here</label>
-            <textarea id="ai-json-input" rows="3" placeholder='[{"name":"Hip Thrust","sets":4,"target":"8-10 reps","query":"Hip+Thrust","superset":null}]'></textarea>
-        </div>
-        <button onclick="saveAIRoutine()">Save AI Generated Routine</button>
-    </div>
-
-    <!-- Session Selection -->
-    <div class="card">
-        <h2>🔥 Session Setup</h2>
-        <div class="form-group">
-            <label for="workout-date">Date</label>
-            <input type="date" id="workout-date">
-        </div>
-        <div class="form-group">
-            <label for="workout-type">Training Phase & Day</label>
-            <select id="workout-type" onchange="loadWorkoutForm()">
-                <option value="">-- Choose Workout --</option>
-                <optgroup id="base-routines-group" label="Base Training Routine">
-                </optgroup>
-                <optgroup id="custom-routines-group" label="Custom & AI Routines">
-                </optgroup>
-            </select>
-        </div>
-    </div>
-
-    <!-- Active Routine Logging -->
-    <div id="workout-container" class="card" style="display:none; border-left-color: var(--accent-primary);">
-        <h2 id="routine-title"></h2>
-        <form id="workout-form">
-            <div id="exercise-list"></div>
-            
-            <div class="volume-badge">
-                Estimated Session Volume: <span id="session-volume">0</span> kg
-                <div id="auto-save-indicator" style="font-size:0.75rem; color:var(--accent-primary); margin-top:4px;">Auto-Save Enabled</div>
-            </div>
-
-            <button type="button" onclick="saveWorkoutSession()">LOG WORKOUT SESSION</button>
-        </form>
-    </div>
-
-    <!-- Analytics Chart -->
-    <div class="card" style="border-left-color: var(--accent-secondary);">
-        <h2>📈 Progression Analytics</h2>
-        <div class="form-group">
-            <label for="chart-exercise">Select Exercise</label>
-            <select id="chart-exercise" onchange="renderChart()">
-                <option value="">-- Choose Exercise --</option>
-            </select>
-        </div>
-        <div class="chart-container">
-            <canvas id="progressChart"></canvas>
-        </div>
-    </div>
+    <button class="timer-btn" onclick="startTimer(120)">Start 2m Rest</button>
 </div>
 
 <script>
-// Known exercise alternatives database
-const exerciseAlternatives = {
-    "Close-Grip Barbell Bench Press": ["Triceps Dip Machine", "Dumbbell Neutral Bench Press", "Weighted Parallel Bar Dips", "JM Press"],
-    "Cable Low-to-High Chest Flyes": ["Dumbbell Flyes", "Pec Deck Machine", "Incline Cable Flyes"],
-    "Barbell Incline Bench Press": ["Incline Dumbbell Press", "Smith Machine Incline Press", "Incline Chest Press Machine"],
-    "Neutral-Grip Lat Pulldown": ["Wide-Grip Lat Pulldown", "Weighted Pull-ups", "Meadows Row"],
-    "Barbell Back Squat / Hack Squat": ["Goblet Squat", "Leg Press 45°", "Smith Machine Squat"],
-    "Romanian Deadlift (RDL)": ["Dumbbell RDL", "Single-Leg Dumbbell RDL", "Good Mornings"],
-    "Barbell or Dumbbell Hip Thrusts": ["Kas Glute Bridge", "Single-Leg Hip Thrust", "Cable Pull-Throughs"],
-    "Bulgarian Split Squats": ["Reverse Walking Lunges", "Step-ups", "Single-Leg Leg Press"]
-};
+    // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjyaBTfSvdFoB1MRgiHlNWXi4mMT44eBhHwmxaathLA5fIRGBfICh1T20Dv9TYlEw18w/exec";
 
-// MR. MAROMBA BASE ROUTINES (5-Day Split)
-const mrRoutines = {
-    "P1 - Day 1: Upper": [
-        { name: "Barbell Incline Bench Press", sets: 4, target: "6-8 reps", query: "Incline+Barbell+Bench+Press", superset: null },
-        { name: "Close-Grip Barbell Bench Press", sets: 3, target: "6-8 reps", query: "Close+Grip+Bench+Press", superset: "SUPERSET B (Upper/Mid Chest + Flyes)" },
-        { name: "Cable Low-to-High Chest Flyes", sets: 3, target: "6-8 reps", query: "Cable+Low+to+High+Fly", superset: "SUPERSET B (Upper/Mid Chest + Flyes)" },
-        { name: "Neutral-Grip Lat Pulldown", sets: 4, target: "6-8 reps", query: "Lat+Pulldown+form", superset: null },
-        { name: "Standing Cable Lateral Raises", sets: 4, target: "6-8 reps", query: "Cable+Lateral+Raise", superset: "SUPERSET C (Delts & Upper Back)" },
-        { name: "Face Pulls", sets: 4, target: "6-8 reps", query: "Face+Pulls+form", superset: "SUPERSET C (Delts & Upper Back)" },
-        { name: "Incline Dumbbell Bicep Curls", sets: 3, target: "6-8 reps", query: "Incline+Dumbbell+Curl", superset: null }
-    ],
-    "P1 - Day 2: Lower": [
-        { name: "Barbell Back Squat / Hack Squat", sets: 4, target: "6-8 reps", query: "Barbell+Back+Squat", superset: null },
-        { name: "Romanian Deadlift (RDL)", sets: 4, target: "6-8 reps", query: "Romanian+Deadlift", superset: null },
-        { name: "Leg Press 45°", sets: 3, target: "6-8 reps", query: "Leg+Press+form", superset: "SUPERSET C (Quad & Hamstring Overload)" },
-        { name: "Lying or Seated Leg Curl", sets: 3, target: "6-8 reps", query: "Lying+Leg+Curl", superset: "SUPERSET C (Quad & Hamstring Overload)" },
-        { name: "Standing Calf Raises", sets: 4, target: "6-8 reps", query: "Standing+Calf+Raise", superset: null }
-    ],
-    "P1 - Day 3: Push": [
-        { name: "Overhead Barbell Press (OHP)", sets: 4, target: "6-8 reps", query: "Overhead+Barbell+Press", superset: null },
-        { name: "Flat Dumbbell Bench Press", sets: 4, target: "6-8 reps", query: "Dumbbell+Bench+Press", superset: "SUPERSET B (Chest & Side Delts)" },
-        { name: "Dumbbell Lateral Raises", sets: 4, target: "6-8 reps", query: "Dumbbell+Lateral+Raise", superset: "SUPERSET B (Chest & Side Delts)" },
-        { name: "Cable Low-to-High Chest Flyes", sets: 3, target: "6-8 reps", query: "Cable+Low+to+High+Fly", superset: null },
-        { name: "Cable Triceps Pushdowns", sets: 3, target: "6-8 reps", query: "Tricep+Pushdown", superset: "SUPERSET D (Heavy Triceps)" },
-        { name: "Overhead Cable Triceps Extensions", sets: 3, target: "6-8 reps", query: "Overhead+Cable+Tricep+Extension", superset: "SUPERSET D (Heavy Triceps)" }
-    ],
-    "P1 - Day 4: Pull": [
-        { name: "Heavy Barbell Row / T-Bar Row", sets: 4, target: "6-8 reps", query: "Barbell+Row", superset: null },
-        { name: "Wide-Grip Lat Pulldown", sets: 4, target: "6-8 reps", query: "Wide+Grip+Lat+Pulldown", superset: "SUPERSET B (Lat Width & Thickness)" },
-        { name: "Chest-Supported Seated Cable Row", sets: 4, target: "6-8 reps", query: "Seated+Cable+Row", superset: "SUPERSET B (Lat Width & Thickness)" },
-        { name: "Dumbbell Rear Delt Flyes", sets: 3, target: "6-8 reps", query: "Rear+Delt+Fly", superset: null },
-        { name: "EZ-Bar Preacher Curls", sets: 3, target: "6-8 reps", query: "Preacher+Curl", superset: "SUPERSET D (Heavy Biceps)" },
-        { name: "Cable Hammer Curls", sets: 3, target: "6-8 reps", query: "Cable+Hammer+Curl", superset: "SUPERSET D (Heavy Biceps)" }
-    ],
-    "P1 - Day 5: Legs": [
-        { name: "Bulgarian Split Squats", sets: 4, target: "6-8 reps", query: "Bulgarian+Split+Squat", superset: null },
-        { name: "Leg Extensions", sets: 4, target: "6-8 reps", query: "Leg+Extension", superset: null },
-        { name: "Machine Seated Calf Raises", sets: 4, target: "6-8 reps", query: "Seated+Calf+Raise", superset: "SUPERSET C (Calves & Heavy Side Delts)" },
-        { name: "Heavy Cable Lateral Raises", sets: 4, target: "6-8 reps", query: "Cable+Lateral+Raise", superset: "SUPERSET C (Calves & Heavy Side Delts)" },
-        { name: "Hanging Leg Raises", sets: 3, target: "6-8 reps", query: "Hanging+Leg+Raise", superset: null }
-    ]
-};
-
-// MRS. MAROMBA BASE ROUTINES (3-Plan Push / Pull / Legs Focus)
-const mrsRoutines = {
-    "Plan 1: Push & Core Sculpt": [
-        { name: "Dumbbell Shoulder Press", sets: 3, target: "8-10 reps", query: "Dumbbell+Shoulder+Press", superset: null },
-        { name: "Incline Dumbbell Bench Press", sets: 3, target: "8-10 reps", query: "Incline+Dumbbell+Bench+Press", superset: "SUPERSET A (Upper Chest & Triceps)" },
-        { name: "Triceps Cable Pushdowns", sets: 3, target: "10-12 reps", query: "Triceps+Cable+Pushdowns", superset: "SUPERSET A (Upper Chest & Triceps)" },
-        { name: "Standing Dumbbell Lateral Raises", sets: 4, target: "10-12 reps", query: "Dumbbell+Lateral+Raises", superset: null },
-        { name: "Hanging Leg Raises / Captains Chair", sets: 3, target: "12-15 reps", query: "Hanging+Leg+Raises", superset: "SUPERSET B (Core Sculpting)" },
-        { name: "Cable Woodchoppers or Planks", sets: 3, target: "12-15 reps", query: "Cable+Woodchoppers", superset: "SUPERSET B (Core Sculpting)" }
-    ],
-    "Plan 2: Pull & Posterior (Glute Medius)": [
-        { name: "Wide-Grip Lat Pulldown", sets: 4, target: "8-10 reps", query: "Wide+Grip+Lat+Pulldown", superset: null },
-        { name: "Chest-Supported Dumbbell Row", sets: 3, target: "8-10 reps", query: "Chest+Supported+Dumbbell+Row", superset: "SUPERSET A (Back Width & Density)" },
-        { name: "Cable Face Pulls", sets: 3, target: "12-15 reps", query: "Cable+Face+Pulls", superset: "SUPERSET A (Back Width & Density)" },
-        { name: "Barbell or Dumbbell Hip Thrusts", sets: 4, target: "8-10 reps", query: "Barbell+Hip+Thrust", superset: null },
-        { name: "Dumbbell Incline Bicep Curls", sets: 3, target: "10-12 reps", query: "Dumbbell+Incline+Bicep+Curls", superset: "SUPERSET B (Arms & Glute Burner)" },
-        { name: "Standing Cable Glute Kickbacks", sets: 3, target: "12-15 reps", query: "Cable+Glute+Kickbacks", superset: "SUPERSET B (Arms & Glute Burner)" }
-    ],
-    "Plan 3: Legs (Glute Max & Quad Focus)": [
-        { name: "Barbell Squat / Goblet Squat", sets: 4, target: "8-10 reps", query: "Barbell+Squat+form", superset: null },
-        { name: "Romanian Deadlift (RDL)", sets: 4, target: "8-10 reps", query: "Romanian+Deadlift+Dumbbell", superset: null },
-        { name: "Bulgarian Split Squats", sets: 3, target: "10-12 reps", query: "Bulgarian+Split+Squat", superset: "SUPERSET A (Unilateral Leg & Glute)" },
-        { name: "Machine Seated Abductor Raises", sets: 3, target: "12-15 reps", query: "Seated+Hip+Abductor", superset: "SUPERSET A (Unilateral Leg & Glute)" },
-        { name: "Leg Extensions", sets: 3, target: "10-12 reps", query: "Leg+Extension", superset: "SUPERSET B (Quad Finish & Calves)" },
-        { name: "Standing Calf Raises", sets: 3, target: "12-15 reps", query: "Standing+Calf+Raise", superset: "SUPERSET B (Quad Finish & Calves)" }
-    ]
-};
-
-document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
-
-let currentUser = "";
-let workoutHistory = [];
-let customRoutines = {};
-let routines = {};
-let chartInstance = null;
-
-function applyTheme(user) {
-    const root = document.documentElement;
-    const subhead = document.getElementById('subhead-text');
-
-    if (user === "MRS. Maromba") {
-        root.style.setProperty('--accent-primary', '#ff1493');
-        root.style.setProperty('--accent-secondary', '#e056fd');
-        root.style.setProperty('--accent-tertiary', '#fb7185');
-        root.style.setProperty('--accent-purple', '#d946ef');
-        if (subhead) subhead.innerText = "3-Plan Glute, Leg & Core Engine (60M Lift + 30M Cardio)";
-    } else {
-        root.style.setProperty('--accent-primary', '#ccff00');
-        root.style.setProperty('--accent-secondary', '#00f2fe');
-        root.style.setProperty('--accent-tertiary', '#ff2a5f');
-        root.style.setProperty('--accent-purple', '#a855f7');
-        if (subhead) subhead.innerText = "5-Day Heavy Hypertrophy Engine (6-8 Rep Target)";
-    }
-}
-
-function showUserModal() {
-    document.getElementById('user-modal').style.display = 'flex';
-}
-
-function selectUser(user) {
-    currentUser = user;
-    applyTheme(currentUser);
-
-    document.getElementById('current-user-name').innerText = currentUser;
-    document.getElementById('user-modal').style.display = 'none';
-
-    const oldHistory = localStorage.getItem('iron_recomp_data');
-    const userHistoryKey = `iron_recomp_data_${currentUser.replace(/\s+/g, '_')}`;
-    
-    if (oldHistory && !localStorage.getItem(userHistoryKey) && currentUser === "MR. Maromba") {
-        localStorage.setItem(userHistoryKey, oldHistory);
-    }
-
-    workoutHistory = JSON.parse(localStorage.getItem(userHistoryKey)) || [];
-    
-    const userCustomKey = `iron_custom_routines_${currentUser.replace(/\s+/g, '_')}`;
-    customRoutines = JSON.parse(localStorage.getItem(userCustomKey)) || {};
-
-    routines = JSON.parse(JSON.stringify(currentUser === "MRS. Maromba" ? mrsRoutines : mrRoutines));
-    
-    loadBaseRoutinesDropdown();
-    loadCustomRoutinesDropdown();
-    populateChartDropdown();
-
-    document.getElementById('workout-container').style.display = 'none';
-    document.getElementById('workout-type').value = '';
-    document.getElementById('data-status').innerText = `Active Profile: ${currentUser} (${workoutHistory.length} Sessions Logged)`;
-}
-
-function loadBaseRoutinesDropdown() {
-    const group = document.getElementById('base-routines-group');
-    group.innerHTML = '';
-    const activeBase = currentUser === "MRS. Maromba" ? mrsRoutines : mrRoutines;
-    
-    Object.keys(activeBase).forEach(key => {
-        group.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
-    });
-}
-
-function loadCustomRoutinesDropdown() {
-    const group = document.getElementById('custom-routines-group');
-    group.innerHTML = '';
-    Object.keys(customRoutines).forEach(key => {
-        routines[key] = customRoutines[key];
-        group.insertAdjacentHTML('beforeend', `<option value="${key}">${key}</option>`);
-    });
-}
-
-function getPastPerformance(exName) {
-    const pastSessions = workoutHistory
-        .filter(s => s.exercises && s.exercises[exName])
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    if (pastSessions.length > 0) {
-        const last = pastSessions[0].exercises[exName];
-        if (Array.isArray(last.sets)) {
-            const setSummary = last.sets.map(s => `${s.weight}kg×${s.reps}`).join(', ');
-            return `LAST (${pastSessions[0].date}): [${setSummary}]`;
-        }
-        return `LAST (${pastSessions[0].date}): ${last.weight} KG × ${last.reps} REPS`;
-    }
-    return "NO PAST LOG - SET YOUR BASELINE";
-}
-
-function renderExerciseHTML(ex, idx) {
-    const pastText = getPastPerformance(ex.name);
-    let setsHTML = '';
-    
-    for (let s = 1; s <= ex.sets; s++) {
-        setsHTML += `
-            <div class="set-box">
-                <label>Set ${s}</label>
-                <div class="set-inputs-row">
-                    <input type="number" step="0.5" id="weight-${idx}-set-${s}" placeholder="kg" oninput="handleInputAutoSave()">
-                    <input type="number" id="reps-${idx}-set-${s}" placeholder="reps" oninput="handleInputAutoSave()">
-                </div>
-            </div>
-        `;
-    }
-
-    return `
-        <div class="exercise-item" id="exercise-item-${idx}">
-            <div class="exercise-header">
-                <span>
-                    <span id="ex-name-text-${idx}">${ex.name}</span> 
-                    <span class="sets-tag">${ex.sets} SETS</span> 
-                    <span class="target-tag">${ex.target}</span>
-                </span>
-                <div>
-                    <button type="button" class="btn-mini btn-secondary" onclick="swapExercise(${idx})">🔄 Swap</button>
-                    <a class="form-link" id="ex-link-${idx}" href="https://www.youtube.com/results?search_query=${ex.query}" target="_blank">FORM ↗</a>
-                </div>
-            </div>
-            <div class="past-perf">${pastText}</div>
-            <div style="text-align:right;">
-                <button type="button" class="btn-mini btn-secondary" onclick="copyFirstSet(${idx}, ${ex.sets})">Copy Set 1 to All</button>
-            </div>
-            <div class="set-grid">${setsHTML}</div>
-        </div>
-    `;
-}
-
-function loadWorkoutForm() {
-    const key = document.getElementById('workout-type').value;
-    const container = document.getElementById('workout-container');
-    const list = document.getElementById('exercise-list');
-    
-    if (!key || !routines[key]) { container.style.display = 'none'; return; }
-    
-    document.getElementById('routine-title').innerText = key;
-    list.innerHTML = '';
-
-    const items = routines[key];
-    let i = 0;
-    while (i < items.length) {
-        const current = items[i];
-        if (current.superset) {
-            const supersetName = current.superset;
-            let supersetGroup = [];
-            while (i < items.length && items[i].superset === supersetName) {
-                supersetGroup.push({ ex: items[i], idx: i });
-                i++;
-            }
-            
-            let blockHTML = `<div class="superset-block"><div class="superset-badge">⚡ ${supersetName} (No Rest Between)</div>`;
-            supersetGroup.forEach(groupItem => {
-                blockHTML += renderExerciseHTML(groupItem.ex, groupItem.idx);
-            });
-            blockHTML += `</div>`;
-            list.insertAdjacentHTML('beforeend', blockHTML);
-        } else {
-            list.insertAdjacentHTML('beforeend', renderExerciseHTML(current, i));
-            i++;
-        }
-    }
-    
-    container.style.display = 'block';
-    calculateTotalVolume();
-}
-
-function swapExercise(idx) {
-    const key = document.getElementById('workout-type').value;
-    if (!key || !routines[key]) return;
-
-    const currentEx = routines[key][idx];
-    const options = exerciseAlternatives[currentEx.name] || ["Dumbbell Alternative", "Cable Alternative", "Machine Alternative"];
-    
-    let promptMsg = `Select an alternative for "${currentEx.name}":\n`;
-    options.forEach((opt, i) => { promptMsg += `${i + 1}. ${opt}\n`; });
-    promptMsg += `${options.length + 1}. Custom Entry`;
-
-    const choice = prompt(promptMsg, "1");
-    if (!choice) return;
-
-    let newName = "";
-    const choiceNum = parseInt(choice);
-    if (choiceNum >= 1 && choiceNum <= options.length) {
-        newName = options[choiceNum - 1];
-    } else {
-        newName = prompt("Enter custom exercise name:", "Custom Exercise");
-    }
-
-    if (newName && newName.trim() !== "") {
-        currentEx.name = newName.trim();
-        currentEx.query = encodeURIComponent(newName.trim());
-        document.getElementById(`ex-name-text-${idx}`).innerText = currentEx.name;
-        document.getElementById(`ex-link-${idx}`).href = `https://www.youtube.com/results?search_query=${currentEx.query}`;
-        populateChartDropdown();
-    }
-}
-
-function handleInputAutoSave() {
-    calculateTotalVolume();
-    saveWorkoutSession(true);
-}
-
-function copyFirstSet(exIdx, totalSets) {
-    const firstWeight = document.getElementById(`weight-${exIdx}-set-1`).value;
-    const firstReps = document.getElementById(`reps-${exIdx}-set-1`).value;
-    
-    for (let s = 2; s <= totalSets; s++) {
-        if (firstWeight) document.getElementById(`weight-${exIdx}-set-${s}`).value = firstWeight;
-        if (firstReps) document.getElementById(`reps-${exIdx}-set-${s}`).value = firstReps;
-    }
-    handleInputAutoSave();
-}
-
-function calculateTotalVolume() {
-    const key = document.getElementById('workout-type').value;
-    if (!key || !routines[key]) return;
-
-    let totalVolume = 0;
-    routines[key].forEach((ex, idx) => {
-        for (let s = 1; s <= ex.sets; s++) {
-            const wEl = document.getElementById(`weight-${idx}-set-${s}`);
-            const rEl = document.getElementById(`reps-${idx}-set-${s}`);
-            if (wEl && rEl) {
-                const weight = parseFloat(wEl.value) || 0;
-                const reps = parseInt(rEl.value) || 0;
-                totalVolume += (weight * reps);
-            }
-        }
-    });
-
-    document.getElementById('session-volume').innerText = totalVolume.toLocaleString();
-}
-
-function saveWorkoutSession(isSilent = false) {
-    const date = document.getElementById('workout-date').value;
-    const key = document.getElementById('workout-type').value;
-    if (!date || !key) {
-        if (!isSilent) alert("Select date and workout.");
-        return;
-    }
-
-    const session = { date, routine: key, exercises: {} };
-
-    routines[key].forEach((ex, idx) => {
-        const setsData = [];
-        let maxWeight = 0;
-        let maxReps = 0;
-
-        for (let s = 1; s <= ex.sets; s++) {
-            const weight = parseFloat(document.getElementById(`weight-${idx}-set-${s}`).value) || 0;
-            const reps = parseInt(document.getElementById(`reps-${idx}-set-${s}`).value) || 0;
-            if (weight > 0 || reps > 0) {
-                setsData.push({ set: s, weight, reps });
-                if (weight > maxWeight) { maxWeight = weight; maxReps = reps; }
-            }
-        }
-
-        if (setsData.length > 0) {
-            session.exercises[ex.name] = {
-                sets: setsData,
-                weight: maxWeight,
-                reps: maxReps
-            };
-        }
-    });
-
-    workoutHistory = workoutHistory.filter(s => !(s.date === date && s.routine === key));
-    workoutHistory.push(session);
-
-    const userHistoryKey = `iron_recomp_data_${currentUser.replace(/\s+/g, '_')}`;
-    localStorage.setItem(userHistoryKey, JSON.stringify(workoutHistory));
-
-    const indicator = document.getElementById('auto-save-indicator');
-    if (indicator) {
-        indicator.innerText = `Auto-Saved (${currentUser}) at ${new Date().toLocaleTimeString()}`;
-    }
-
-    if (!isSilent) {
-        alert(`SESSION LOGGED FOR ${currentUser}! KEEP UP THE GAINS.`);
-        populateChartDropdown();
-        loadWorkoutForm();
-        renderChart();
-    }
-}
-
-// AI Generator
-function copyAIPrompt() {
-    const name = document.getElementById('ai-routine-name').value || "Custom AI Routine";
-    const promptText = `Acts as an elite strength coach. Generate a JSON array for a custom workout named "${name}" targeting hyper-focus glutes, legs, and core for ${currentUser}. Output ONLY valid JSON array format like this:
-[
-  {"name":"Hip Thrust","sets":4,"target":"8-10 reps","query":"Hip+Thrust","superset":null},
-  {"name":"Bulgarian Split Squat","sets":3,"target":"10-12 reps","query":"Bulgarian+Split+Squat","superset":"SUPERSET A"},
-  {"name":"Seated Abductor Machine","sets":3,"target":"12-15 reps","query":"Seated+Abductor","superset":"SUPERSET A"}
-]`;
-
-    navigator.clipboard.writeText(promptText).then(() => {
-        alert("Gemini AI Prompt copied to clipboard! Paste it into Gemini, then paste its JSON output below.");
-    });
-}
-
-function saveAIRoutine() {
-    const name = document.getElementById('ai-routine-name').value;
-    const jsonStr = document.getElementById('ai-json-input').value;
-
-    if (!name || !jsonStr) return alert("Please provide both a routine name and JSON output.");
-
-    try {
-        const parsedExercises = JSON.parse(jsonStr);
-        if (!Array.isArray(parsedExercises)) throw new Error("JSON must be an array.");
-
-        customRoutines[name] = parsedExercises;
-        const userCustomKey = `iron_custom_routines_${currentUser.replace(/\s+/g, '_')}`;
-        localStorage.setItem(userCustomKey, JSON.stringify(customRoutines));
-        loadCustomRoutinesDropdown();
-        alert(`Routine "${name}" saved for ${currentUser}! Select it from the dropdown.`);
-    } catch (e) {
-        alert("Invalid JSON format from Gemini. Ensure you copied only the JSON array.");
-    }
-}
-
-// Rest Timer
-let timer;
-function startTimer(sec) {
-    clearInterval(timer);
-    let rem = sec;
-    const el = document.getElementById('timer-display');
-    timer = setInterval(() => {
-        const m = String(Math.floor(rem / 60)).padStart(2, '0');
-        const s = String(rem % 60).padStart(2, '0');
-        el.innerText = `${m}:${s}`;
-        if (--rem < 0) { 
-            clearInterval(timer); 
-            el.innerText = "LIFT NOW!"; 
-        }
-    }, 1000);
-}
-
-// Charting Engine
-function populateChartDropdown() {
-    const select = document.getElementById('chart-exercise');
-    select.innerHTML = '<option value="">-- Choose Exercise --</option>';
-    const allEx = new Set();
-    Object.values(routines).flat().forEach(e => allEx.add(e.name));
-    allEx.forEach(ex => select.insertAdjacentHTML('beforeend', `<option value="${ex}">${ex}</option>`));
-}
-
-function renderChart() {
-    const exName = document.getElementById('chart-exercise').value;
-    const ctx = document.getElementById('progressChart').getContext('2d');
-
-    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-    if (!exName) return;
-
-    const filtered = workoutHistory
-        .filter(s => s.exercises && s.exercises[exName])
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    if (filtered.length === 0) return;
-
-    const labels = filtered.map(s => s.date);
-    const weights = filtered.map(s => s.exercises[exName].weight);
-    const reps = filtered.map(s => s.exercises[exName].reps);
-
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-primary').trim();
-    const secondaryColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-secondary').trim();
-
-    chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                { label: 'Max Weight (kg)', data: weights, borderColor: primaryColor, backgroundColor: primaryColor, tension: 0.2, yAxisID: 'y' },
-                { label: 'Max Reps', data: reps, borderColor: secondaryColor, backgroundColor: secondaryColor, tension: 0.2, yAxisID: 'y1' }
+    const workouts = {
+        'A': {
+            title: "Workout A — Lat Width, Upper Chest & Core",
+            supersets: [
+                {
+                    tag: "Superset A",
+                    exercises: [
+                        { name: "Wide-Grip Lat Pulldown", query: "wide grip lat pulldown form jeff nippard" },
+                        { name: "Incline Barbell/DB Bench Press", query: "incline dumbbell press form jeff nippard" }
+                    ]
+                },
+                {
+                    tag: "Superset B",
+                    exercises: [
+                        { name: "Chest-Supported T-Bar Row", query: "chest supported t bar row form jeff nippard" },
+                        { name: "Flat Barbell/Smith Press", query: "flat bench press form jeff nippard" }
+                    ]
+                },
+                {
+                    tag: "Superset C",
+                    exercises: [
+                        { name: "Smith Machine Squat / Leg Press 45", query: "smith machine squat form jeff nippard" },
+                        { name: "Cable Kneeling Crunch", query: "cable kneeling crunch form jeff nippard" }
+                    ]
+                },
+                {
+                    tag: "Superset D",
+                    exercises: [
+                        { name: "Cable Lateral Raise", query: "cable lateral raise form jeff nippard" },
+                        { name: "Standing/Seated Calf Raise", query: "standing calf raise form jeff nippard" }
+                    ]
+                }
             ]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-                y: { type: 'linear', display: true, position: 'left', ticks: { color: primaryColor }, grid: { color: '#1e293b' } },
-                y1: { type: 'linear', display: true, position: 'right', ticks: { color: secondaryColor }, grid: { drawOnChartArea: false } }
-            },
-            plugins: { legend: { labels: { color: '#ffffff' } } }
-        }
-    });
-}
-
-// Data Manager Functions
-function exportDataFile() {
-    const fileName = `iron_recomp_${currentUser.replace(/\s+/g, '_')}_data.json`;
-    const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(workoutHistory, null, 2));
-    const anchor = document.createElement('a');
-    anchor.setAttribute("href", str);
-    anchor.setAttribute("download", fileName);
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-}
-
-function importDataFile(event) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            workoutHistory = JSON.parse(e.target.result);
-            const userHistoryKey = `iron_recomp_data_${currentUser.replace(/\s+/g, '_')}`;
-            localStorage.setItem(userHistoryKey, JSON.stringify(workoutHistory));
-            document.getElementById('data-status').innerText = `Loaded ${workoutHistory.length} sessions for ${currentUser}.`;
-            populateChartDropdown();
-            alert(`JSON Data File Loaded Successfully for ${currentUser}!`);
-        } catch (err) {
-            alert("Invalid JSON file format.");
+        'B': {
+            title: "Workout B — Shoulder Width, Arms & Posterior Chain",
+            supersets: [
+                {
+                    tag: "Superset A",
+                    exercises: [
+                        { name: "Cable Lateral Raise (Lean-in w/ Cuffs)", query: "cable lateral raise form jeff nippard" },
+                        { name: "Seated DB Overhead Press", query: "seated dumbbell overhead press form jeff nippard" }
+                    ]
+                },
+                {
+                    tag: "Superset B",
+                    exercises: [
+                        { name: "Bayesian Cable Curl", query: "bayesian cable curl form jeff nippard" },
+                        { name: "Overhead Cable Triceps Extension", query: "overhead cable tricep extension form jeff nippard" }
+                    ]
+                },
+                {
+                    tag: "Superset C",
+                    exercises: [
+                        { name: "Seated Leg Curl", query: "seated leg curl form jeff nippard" },
+                        { name: "Good Morning / 45° Back Extension", query: "barbell good morning form jeff nippard" }
+                    ]
+                },
+                {
+                    tag: "Superset D",
+                    exercises: [
+                        { name: "Reverse Pec Deck", query: "reverse pec deck form jeff nippard" },
+                        { name: "DB Wrist Curl / Reverse Curl", query: "dumbbell wrist curl form" }
+                    ]
+                }
+            ]
+        },
+        'C': {
+            title: "Workout C — Vertical Pull, Chest Isolation & Obliques",
+            supersets: [
+                {
+                    tag: "Superset A",
+                    exercises: [
+                        { name: "Neutral-Grip Pull-ups / Pulldown", query: "neutral grip lat pulldown form jeff nippard" },
+                        { name: "Pec Deck Flye / Cable Flye", query: "pec deck flye form jeff nippard" }
+                    ]
+                },
+                {
+                    tag: "Superset B",
+                    exercises: [
+                        { name: "Reverse Cable Crossover", query: "reverse cable crossover form jeff nippard" },
+                        { name: "Standing Cable Lateral Raise", query: "cable lateral raise form jeff nippard" }
+                    ]
+                },
+                {
+                    tag: "Superset C",
+                    exercises: [
+                        { name: "Barbell Romanian Deadlift (RDL)", query: "romanian deadlift form jeff nippard" },
+                        { name: "Cable Woodchoppers / Side Bends", query: "cable woodchopper form" }
+                    ]
+                },
+                {
+                    tag: "Superset D",
+                    exercises: [
+                        { name: "Machine Preacher Curl", query: "machine preacher curl form jeff nippard" },
+                        { name: "Triceps Pressdown (Bar/Rope)", query: "tricep pushdown form jeff nippard" }
+                    ]
+                }
+            ]
+        },
+        'D': {
+            title: "Workout D — Arm Hypertrophy, Legs & Core Stability",
+            supersets: [
+                {
+                    tag: "Superset A",
+                    exercises: [
+                        { name: "Preacher EZ-Bar / DB Curl", query: "ez bar preacher curl form jeff nippard" },
+                        { name: "Barbell Skullcrushers", query: "barbell skullcrushers form jeff nippard" }
+                    ]
+                },
+                {
+                    tag: "Superset B",
+                    exercises: [
+                        { name: "Seated Leg Extension", query: "seated leg extension form jeff nippard" },
+                        { name: "Machine Hip Abduction / Adduction", query: "hip abduction machine form" }
+                    ]
+                },
+                {
+                    tag: "Superset C",
+                    exercises: [
+                        { name: "Hanging Leg/Knee Raises", query: "hanging leg raise form" },
+                        { name: "Cable Pallof Press / Ab Wheel", query: "pallof press form" }
+                    ]
+                },
+                {
+                    tag: "Superset D",
+                    exercises: [
+                        { name: "Trap-Bar / Barbell Shrug", query: "trap bar shrug form jeff nippard" },
+                        { name: "Cable Lat Prayer / Pullover", query: "lat prayer form jeff nippard" }
+                    ]
+                }
+            ]
         }
     };
-    reader.readAsText(event.target.files[0]);
-}
 
-function fetchRemoteJSON() {
-    const remoteFile = `iron_recomp_${currentUser.replace(/\s+/g, '_')}_data.json`;
-    fetch(remoteFile)
-        .then(res => res.json())
-        .then(data => {
-            workoutHistory = data;
-            const userHistoryKey = `iron_recomp_data_${currentUser.replace(/\s+/g, '_')}`;
-            localStorage.setItem(userHistoryKey, JSON.stringify(workoutHistory));
-            document.getElementById('data-status').innerText = `Synced ${workoutHistory.length} sessions for ${currentUser}.`;
-            populateChartDropdown();
-            alert(`Remote JSON file synced successfully for ${currentUser}!`);
-        })
-        .catch(err => {
-            alert(`Could not load '${remoteFile}'. Use 'Load Local File' to select your data manually.`);
+    let currentDay = 'A';
+    let timerInterval = null;
+
+    function loadWorkout(dayKey) {
+        currentDay = dayKey;
+        document.querySelectorAll('.nav button').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn${dayKey}`).classList.add('active');
+
+        const data = workouts[dayKey];
+        const container = document.getElementById('workoutContainer');
+        container.innerHTML = `<h2>${data.title}</h2>`;
+
+        data.supersets.forEach((ss, ssIndex) => {
+            let ssHtml = `<div class="superset-card"><div class="superset-title">${ss.tag}</div>`;
+            
+            ss.exercises.forEach((ex, exIndex) => {
+                const exId = `ex_${ssIndex}_${exIndex}`;
+                const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.query)}`;
+
+                ssHtml += `
+                    <div class="exercise-block">
+                        <div class="exercise-header">
+                            <span class="exercise-name">${ex.name}</span>
+                            <a href="${ytUrl}" target="_blank" class="form-link">Form Guide 🎥</a>
+                        </div>
+                        
+                        <!-- Warmup Set -->
+                        <div class="set-row">
+                            <span class="set-label">Warmup</span>
+                            <input type="number" placeholder="Weight" id="${exId}_w_w" oninput="calcWarmup('${exId}')">
+                            <input type="number" placeholder="Reps (6-8)" id="${exId}_w_r">
+                            <button class="btn-save-set" id="btn_${exId}_w" onclick="saveSingleSet('${ss.tag}', '${ex.name}', 'Warmup', '${exId}_w_r', '${exId}_w_w', this)">✓</button>
+                        </div>
+                        
+                        <!-- Working Sets 1-3 -->
+                        ${[1, 2, 3].map(s => `
+                            <div class="set-row">
+                                <span class="set-label">Set ${s}</span>
+                                <input type="number" placeholder="Weight" id="${exId}_s${s}_w" oninput="updateWarmupFromSet1('${exId}', ${s})">
+                                <input type="number" placeholder="Reps (6-8)" id="${exId}_s${s}_r">
+                                <button class="btn-save-set" id="btn_${exId}_s${s}" onclick="saveSingleSet('${ss.tag}', '${ex.name}', 'Set ${s}', '${exId}_s${s}_r', '${exId}_s${s}_w', this)">✓</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            });
+
+            ssHtml += `</div>`;
+            container.innerHTML += ssHtml;
         });
-}
+    }
+
+    // Automated 80% Warmup Calculation
+    function updateWarmupFromSet1(exId, setNum) {
+        if (setNum === 1) {
+            const set1Weight = parseFloat(document.getElementById(`${exId}_s1_w`).value);
+            const warmupWeightInput = document.getElementById(`${exId}_w_w`);
+            if (set1Weight && !warmupWeightInput.value) {
+                warmupWeightInput.value = Math.round(set1Weight * 0.8);
+            }
+        }
+    }
+
+    // Single Set Save to Google Sheet
+    function saveSingleSet(superset, exercise, setType, repsId, weightId, btn) {
+        const reps = document.getElementById(repsId).value;
+        const weight = document.getElementById(weightId).value;
+
+        if (!reps || !weight) {
+            alert("Please enter both reps and weight before saving.");
+            return;
+        }
+
+        const payload = {
+            timestamp: new Date().toISOString(),
+            workoutDay: `Day ${currentDay}`,
+            superset: superset,
+            exercise: exercise,
+            setType: setType,
+            reps: reps,
+            weight: weight
+        };
+
+        btn.disabled = true;
+        btn.innerText = "...";
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(() => {
+            btn.classList.add('saved');
+            btn.innerText = "Saved";
+            startTimer(120); // Auto-trigger 2-minute rest timer
+        }).catch(err => {
+            alert("Save failed: " + err);
+            btn.disabled = false;
+            btn.innerText = "✓";
+        });
+    }
+
+    // Finish & Sync Full Workout
+    function finishWorkout() {
+        const data = workouts[currentDay];
+        const rows = [];
+        const timestamp = new Date().toISOString();
+
+        data.supersets.forEach((ss, ssIndex) => {
+            ss.exercises.forEach((ex, exIndex) => {
+                const exId = `ex_${ssIndex}_${exIndex}`;
+                
+                // Warmup
+                const wReps = document.getElementById(`${exId}_w_r`).value;
+                const wWeight = document.getElementById(`${exId}_w_w`).value;
+                if (wReps && wWeight) {
+                    rows.push({ timestamp, workoutDay: `Day ${currentDay}`, superset: ss.tag, exercise: ex.name, setType: 'Warmup', reps: wReps, weight: wWeight });
+                }
+
+                // Working Sets
+                [1, 2, 3].forEach(s => {
+                    const sReps = document.getElementById(`${exId}_s${s}_r`).value;
+                    const sWeight = document.getElementById(`${exId}_s${s}_w`).value;
+                    if (sReps && sWeight) {
+                        rows.push({ timestamp, workoutDay: `Day ${currentDay}`, superset: ss.tag, exercise: ex.name, setType: `Set ${s}`, reps: sReps, weight: sWeight });
+                    }
+                });
+            });
+        });
+
+        if (rows.length === 0) {
+            alert("No set data entered to submit!");
+            return;
+        }
+
+        document.getElementById('statusMsg').innerText = "Syncing full workout to Google Sheets...";
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(rows)
+        }).then(() => {
+            document.getElementById('statusMsg').innerText = "Workout successfully logged & saved!";
+            setTimeout(() => { document.getElementById('statusMsg').innerText = ""; }, 5000);
+        }).catch(err => {
+            alert("Sync failed: " + err);
+            document.getElementById('statusMsg').innerText = "";
+        });
+    }
+
+    // Rest Timer Logic
+    function startTimer(seconds) {
+        clearInterval(timerInterval);
+        let timeLeft = seconds;
+        updateTimerDisplay(timeLeft);
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay(timeLeft);
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('timerDisplay').innerText = "TIME UP!";
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay(seconds) {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+    }
+
+    // Initialize Day A on load
+    loadWorkout('A');
 </script>
 </body>
 </html>
