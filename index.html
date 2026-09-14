@@ -216,7 +216,7 @@
             margin-bottom: 80px;
         }
 
-        /* Modal Popup */
+        /* Success Modal Popup */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -288,7 +288,7 @@
 </div>
 
 <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4ZqXrgyw7sOp4TTKoH3Fco2MSHxqDLZnS4GYccyjhXGmeoiy6XYry5hXQU8IFAIFrBA/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjyaBTfSvdFoB1MRgiHlNWXi4mMT44eBhHwmxaathLA5fIRGBfICh1T20Dv9TYlEw18w/exec";
 
     const workouts = {
         'A': {
@@ -332,14 +332,13 @@
     let currentDay = 'A';
     let timerInterval = null;
     let exerciseHistory = {};
+    let savedSetKeys = new Set(); // Tracks set keys saved individually to avoid double counting
 
-    // JSONP callback function to receive baseline data from Google Apps Script
     function receiveHistory(data) {
         exerciseHistory = data;
         loadWorkout(currentDay);
     }
 
-    // Fetch history using JSONP to bypass CORS blocking
     function fetchHistory() {
         const script = document.createElement('script');
         script.src = `${GOOGLE_SCRIPT_URL}?callback=receiveHistory`;
@@ -362,7 +361,11 @@
                 const exId = `ex_${ssIndex}_${exIndex}`;
                 const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(ex.query)}`;
                 const history = exerciseHistory[ex.name];
-                const baselineText = history ? `Baseline: ${history.weight} lbs × ${history.reps} reps` : `Baseline: No prior data`;
+                
+                // Baseline string formatted in kg with dd-mm-yy date
+                const baselineText = history 
+                    ? `Baseline: ${history.weight} kg × ${history.reps} reps (${history.date || 'N/A'})` 
+                    : `Baseline: No prior data`;
 
                 ssHtml += `
                     <div class="exercise-block">
@@ -382,18 +385,18 @@
                         <!-- Warmup Set -->
                         <div class="set-row">
                             <span class="set-label">Warmup</span>
-                            <input type="number" placeholder="Weight" id="${exId}_w_w">
+                            <input type="number" placeholder="kg" id="${exId}_w_w">
                             <input type="number" placeholder="Reps (6-8)" id="${exId}_w_r">
-                            <button class="btn-save-set" id="btn_${exId}_w" onclick="saveSingleSet('${ss.tag}', '${ex.name}', 'Warmup', '${exId}_w_r', '${exId}_w_w', this)">✓</button>
+                            <button class="btn-save-set" id="btn_${exId}_w" onclick="saveSingleSet('${ss.tag}', '${ex.name}', 'Warmup', '${exId}_w_r', '${exId}_w_w', '${exId}_w', this)">✓</button>
                         </div>
                         
                         <!-- Working Sets 1-3 -->
                         ${[1, 2, 3].map(s => `
                             <div class="set-row">
                                 <span class="set-label">Set ${s}</span>
-                                <input type="number" placeholder="Weight" id="${exId}_s${s}_w" oninput="updateWarmupFromSet1('${exId}', ${s})">
+                                <input type="number" placeholder="kg" id="${exId}_s${s}_w" oninput="updateWarmupFromSet1('${exId}', ${s})">
                                 <input type="number" placeholder="Reps (6-8)" id="${exId}_s${s}_r">
-                                <button class="btn-save-set" id="btn_${exId}_s${s}" onclick="saveSingleSet('${ss.tag}', '${ex.name}', 'Set ${s}', '${exId}_s${s}_r', '${exId}_s${s}_w', this)">✓</button>
+                                <button class="btn-save-set" id="btn_${exId}_s${s}" onclick="saveSingleSet('${ss.tag}', '${ex.name}', 'Set ${s}', '${exId}_s${s}_r', '${exId}_s${s}_w', '${exId}_s${s}', this)">✓</button>
                             </div>
                         `).join('')}
                     </div>
@@ -430,7 +433,8 @@
         });
     }
 
-    function saveSingleSet(superset, exercise, setType, repsId, weightId, btn) {
+    // Save individual set & tag setKey to avoid double-counting
+    function saveSingleSet(superset, exercise, setType, repsId, weightId, setKey, btn) {
         const reps = document.getElementById(repsId).value;
         const weight = document.getElementById(weightId).value;
 
@@ -460,6 +464,7 @@
         }).then(() => {
             btn.classList.add('saved');
             btn.innerText = "Saved";
+            savedSetKeys.add(setKey); // Mark key as saved
             startTimer(120);
         }).catch(err => {
             alert("Save failed: " + err);
@@ -468,6 +473,7 @@
         });
     }
 
+    // Finish & Sync Workout: Only syncs unsaved sets
     function finishWorkout() {
         const data = workouts[currentDay];
         const rows = [];
@@ -477,23 +483,28 @@
             ss.exercises.forEach((ex, exIndex) => {
                 const exId = `ex_${ssIndex}_${exIndex}`;
                 
+                // Warmup Set
+                const wKey = `${exId}_w`;
                 const wReps = document.getElementById(`${exId}_w_r`).value;
                 const wWeight = document.getElementById(`${exId}_w_w`).value;
-                if (wReps && wWeight) {
+                if (wReps && wWeight && !savedSetKeys.has(wKey)) {
                     rows.push({ timestamp, workoutDay: `Day ${currentDay}`, superset: ss.tag, exercise: ex.name, setType: 'Warmup', reps: wReps, weight: wWeight });
                 }
 
+                // Working Sets 1-3
                 [1, 2, 3].forEach(s => {
+                    const sKey = `${exId}_s${s}`;
                     const sReps = document.getElementById(`${exId}_s${s}_r`).value;
                     const sWeight = document.getElementById(`${exId}_s${s}_w`).value;
-                    if (sReps && sWeight) {
+                    if (sReps && sWeight && !savedSetKeys.has(sKey)) {
                         rows.push({ timestamp, workoutDay: `Day ${currentDay}`, superset: ss.tag, exercise: ex.name, setType: `Set ${s}`, reps: sReps, weight: sWeight });
                     }
                 });
             });
         });
 
-        if (rows.length === 0) {
+        // If all filled sets were saved individually via "✓", complete session without sending empty payload
+        if (rows.length === 0 && savedSetKeys.size === 0) {
             alert("No set data entered to submit!");
             return;
         }
@@ -502,28 +513,28 @@
         finishBtn.disabled = true;
         finishBtn.innerText = "Syncing...";
 
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(rows)
-        }).then(() => {
-            // Show custom success popup
+        const handleSuccess = () => {
             document.getElementById('successModal').style.display = 'flex';
-
-            // Clean inputs to avoid double counting
             clearInputs();
-
-            // Refresh baseline history
             fetchHistory();
+            finishBtn.disabled = false;
+            finishBtn.innerText = "Finish & Sync Workout";
+        };
 
-            finishBtn.disabled = false;
-            finishBtn.innerText = "Finish & Sync Workout";
-        }).catch(err => {
-            alert("Sync failed: " + err);
-            finishBtn.disabled = false;
-            finishBtn.innerText = "Finish & Sync Workout";
-        });
+        if (rows.length > 0) {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(rows)
+            }).then(handleSuccess).catch(err => {
+                alert("Sync failed: " + err);
+                finishBtn.disabled = false;
+                finishBtn.innerText = "Finish & Sync Workout";
+            });
+        } else {
+            handleSuccess();
+        }
     }
 
     function clearInputs() {
@@ -533,6 +544,7 @@
             btn.innerText = '✓';
             btn.disabled = false;
         });
+        savedSetKeys.clear(); // Reset tracked saved sets
     }
 
     function closeModal() {
@@ -560,7 +572,7 @@
         document.getElementById('timerDisplay').innerText = `${m}:${s}`;
     }
 
-    // Load initial data
+    // Fetch history and load application
     fetchHistory();
 </script>
 </body>
